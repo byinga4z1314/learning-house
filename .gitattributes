@@ -1,0 +1,2 @@
+# 统一使用 CRLF 换行，消除跨平台警告
+* text=auto eol=crlf
