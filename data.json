@@ -1,0 +1,18 @@
+{
+  "_说明": {
+    "用途": "学习小屋的数据源：家长端 parent.html 与 孩子端 index.html 都会读取本文件。",
+    "填写方式": "把下面各字段的空数组替换成真实数据即可；字段名不要改，多余的字段会被忽略。",
+    "weekly_checkin": "本周打卡汇总。数组，每天一条：{ date:'YYYY-MM-DD', yueyue:{read:true, sport:false, book:'小王子(可选)'}, chengcheng:{read:true, sport:true} }。read/sport 为布尔，book 为当天阅读的书名（可选）。",
+    "messages": "孩子留言。数组：{ id:'m1', owner:'yueyue'|'chengcheng', text:'留言内容', date:'2026-09-07', status:'待处理'|'已回复', reply:'爸妈的回复(可选)' }。",
+    "mistakes": "错题本。数组：{ id:'e1', owner:'yueyue'|'chengcheng', subject:'数学', point:'分数加减', reason:'通分错误', date:'2026-09-07' }。",
+    "homework": "学校作业。数组：{ id:'h1', owner:'chengcheng', subject:'语文', topic:'手抄报', status:'已完成', date:'2026-09-07' }。status 即完成情况。",
+    "inspirations": "灵感记录。数组：{ id:'i1', owner:'yueyue', topic:'为什么要保护环境', idea:'可以写垃圾分类的好处', type:'思考' }。type 为类型标签。",
+    "health_records": "健康记录。数组：{ owner:'yueyue'|'chengcheng', year:2026, month:9, recorded:true }。recorded=true 表示当月已记录，false 或未填表示未记录（家长端会红色提醒）。"
+  },
+  "weekly_checkin": [],
+  "messages": [],
+  "mistakes": [],
+  "homework": [],
+  "inspirations": [],
+  "health_records": []
+}

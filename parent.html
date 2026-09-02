@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>家长管理端 · 成长看板</title>
+<style>
+  :root{
+    --page:#fdf6ea;
+    --card:#ffffff;
+    --ink:#4a3b32;
+    --ink-soft:#9c8b7d;
+    --line:#f0e3ce;
+    --accent:#ef7d4f;
+    --accent-deep:#d9632f;
+    --gold:#ffc94d;
+    --yue:#ff8a7a;
+    --yue-bg:#fff1f5;
+    --cheng:#e6a23c;
+    --cheng-bg:#fff6e6;
+    --danger:#e0533a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;padding:0 16px calc(40px + env(safe-area-inset-bottom));
+    background:var(--page);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:720px;margin:0 auto;}
+  [hidden]{display:none !important;}
+
+  /* ===== 登录页 ===== */
+  .login-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .login-card{
+    background:var(--card);border-radius:24px;padding:34px 26px;width:100%;max-width:380px;
+    text-align:center;box-shadow:0 16px 50px rgba(120,90,40,.18);border:1px solid var(--line);
+  }
+  .login-card h1{font-size:24px;margin:0 0 6px;}
+  .login-card .sub{color:var(--ink-soft);font-size:15px;margin:0 0 26px;}
+  .login-card label{display:block;text-align:left;font-size:15px;color:var(--ink-soft);margin:0 0 8px 4px;}
+  .pw-input{
+    width:100%;padding:14px 16px;font-size:22px;letter-spacing:8px;text-align:center;
+    border:2px solid var(--line);border-radius:14px;background:#fffdf8;color:var(--ink);
+    font-family:inherit;
+  }
+  .pw-input:focus{outline:none;border-color:var(--accent);}
+  .login-btn{
+    width:100%;margin-top:18px;min-height:50px;border:none;border-radius:14px;
+    background:linear-gradient(135deg,var(--accent),var(--gold));color:#fff;
+    font-size:18px;font-weight:700;font-family:inherit;cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .login-btn:active{transform:scale(.98);}
+  .pw-error{color:var(--danger);font-size:14px;margin-top:12px;}
+
+  /* ===== 主界面 ===== */
+  header.top{text-align:center;padding:26px 8px 10px;}
+  header.top h1{font-size:26px;margin:0 0 4px;letter-spacing:1px;}
+  header.top .week-range{color:var(--ink-soft);font-size:15px;}
+  .logout-btn{
+    position:absolute;top:14px;right:14px;background:none;border:1px solid var(--line);
+    color:var(--ink-soft);font-size:13px;border-radius:10px;padding:6px 12px;cursor:pointer;font-family:inherit;
+  }
+  .top-wrap{position:relative;}
+
+  .empty-banner{
+    background:#fff4e0;border:2px dashed #ffd28a;border-radius:14px;
+    padding:14px 16px;margin:14px 0;text-align:center;color:#9a6a2e;font-size:16px;
+  }
+
+  section.sec{margin-bottom:26px;}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;}
+  .sec-title{font-size:20px;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;}
+  .card{
+    background:var(--card);border-radius:18px;padding:16px 18px;
+    box-shadow:0 3px 12px rgba(120,90,40,.07);border:1px solid var(--line);
+  }
+  .empty{color:var(--ink-soft);text-align:center;padding:14px 8px;font-size:16px;}
+
+  /* 本周概览 */
+  .ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .ov-card{border-radius:18px;padding:16px 16px;box-shadow:0 3px 12px rgba(120,90,40,.07);border:1px solid var(--line);}
+  .ov-card.yue{background:var(--yue-bg);}
+  .ov-card.cheng{background:var(--cheng-bg);}
+  .ov-title{font-size:18px;font-weight:700;text-align:center;margin-bottom:12px;}
+  .ov-row{display:flex;align-items:center;gap:6px;font-size:15px;padding:5px 0;}
+  .ov-row .lbl{flex:1;}
+  .ov-row b{font-size:22px;color:var(--accent-deep);}
+  .ov-row .unit{color:var(--ink-soft);}
+
+  /* 待处理留言 */
+  .msg-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line);}
+  .msg-item:last-child{border-bottom:none;}
+  .msg-main{flex:1;min-width:0;}
+  .msg-head{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .msg-name{font-size:14px;font-weight:700;color:#fff;border-radius:8px;padding:1px 10px;}
+  .msg-name.yue{background:var(--yue);}
+  .msg-name.cheng{background:var(--cheng);}
+  .msg-time{font-size:14px;color:var(--ink-soft);}
+  .msg-body{font-size:16px;word-break:break-word;}
+  .done-btn{
+    flex-shrink:0;border:none;background:var(--accent-deep);color:#fff;font-family:inherit;
+    font-size:15px;font-weight:600;border-radius:10px;padding:8px 14px;min-height:44px;cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .done-btn:active{transform:scale(.96);}
+
+  /* 标签切换 */
+  .tab-strip{display:flex;gap:6px;background:#f3e6cf;border-radius:12px;padding:4px;}
+  .tab-btn{
+    border:none;background:transparent;border-radius:9px;padding:7px 14px;font-size:15px;font-weight:600;
+    color:#6b5a4c;cursor:pointer;font-family:inherit;min-height:38px;transition:all .2s ease;
+  }
+  .tab-btn.active{background:#fff;color:var(--accent-deep);box-shadow:0 1px 5px rgba(120,90,40,.15);}
+
+  /* 迷你卡片列表 */
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .mini-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(120,90,40,.06);}
+  .mc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .mc-tag{font-size:15px;font-weight:700;color:var(--accent-deep);}
+  .mc-date{font-size:14px;color:var(--ink-soft);}
+  .mc-point{font-size:16px;font-weight:600;}
+  .mc-reason{font-size:15px;color:var(--ink);margin-top:2px;line-height:1.6;}
+
+  /* 健康提醒 */
+  .health-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:0 2px 8px rgba(120,90,40,.06);}
+  .health-row + .health-row{margin-top:10px;}
+  .health-row.warn{background:#fdecea;border-color:#f3b6ac;}
+  .h-name{font-size:14px;font-weight:700;color:#fff;border-radius:8px;padding:2px 10px;}
+  .h-name.yue{background:var(--yue);}
+  .h-name.cheng{background:var(--cheng);}
+  .h-status{flex:1;font-size:16px;}
+  .health-row.warn .h-status{color:var(--danger);font-weight:600;}
+
+  /* 底部简报按钮 */
+  .report-btn{
+    width:100%;min-height:52px;border:none;border-radius:16px;cursor:pointer;font-family:inherit;
+    background:linear-gradient(135deg,var(--accent),var(--gold));color:#fff;font-size:18px;font-weight:700;
+    box-shadow:0 4px 14px rgba(217,99,47,.25);transition:transform .15s ease;
+  }
+  .report-btn:active{transform:scale(.98);}
+  .report-tip{text-align:center;color:var(--ink-soft);font-size:14px;margin-top:8px;}
+
+  @media (max-width:480px){
+    .ov-grid{gap:10px;}
+    header.top h1{font-size:23px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 登录页 ===== -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <h1>家长管理端</h1>
+    <p class="sub">请输入 4 位数字密码</p>
+    <label for="pwInput">密码</label>
+    <input id="pwInput" class="pw-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+    <button type="button" class="login-btn" id="loginBtn">登录</button>
+    <div class="pw-error" id="pwError" hidden>密码不正确，请重试</div>
+  </div>
+</div>
+
+<!-- ===== 主界面 ===== -->
+<div class="page" id="app" hidden>
+  <div class="top-wrap">
+    <button type="button" class="logout-btn" id="logoutBtn">退出登录</button>
+    <header class="top">
+      <h1>玥玥和程程的成长看板</h1>
+      <div class="week-range" id="weekRange"></div>
+    </header>
+  </div>
+
+  <div class="empty-banner" id="emptyBanner" hidden>暂无数据，本周数据将在周日晚上更新</div>
+
+  <!-- 本周概览 -->
+  <section class="sec">
+    <h2 class="sec-title">📊 本周概览</h2>
+    <div class="ov-grid">
+      <div class="ov-card yue" id="yueyueCard">
+        <div class="ov-title">👧 玥玥</div>
+        <div class="ov-row"><span class="lbl">📖 阅读打卡</span><b class="ov-read">0</b><span class="unit">天</span></div>
+        <div class="ov-row"><span class="lbl">💪 运动打卡</span><b class="ov-sport">0</b><span class="unit">天</span></div>
+        <div class="ov-row"><span class="lbl">📝 错题</span><b class="ov-mistake">0</b><span class="unit">道</span></div>
+        <div class="ov-row"><span class="lbl">💡 灵感</span><b class="ov-idea">0</b><span class="unit">条</span></div>
+        <div class="ov-row"><span class="lbl">📚 作业</span><b class="ov-homework">0</b><span class="unit">份</span></div>
+      </div>
+      <div class="ov-card cheng" id="chengchengCard">
+        <div class="ov-title">👦 程程</div>
+        <div class="ov-row"><span class="lbl">📖 阅读打卡</span><b class="ov-read">0</b><span class="unit">天</span></div>
+        <div class="ov-row"><span class="lbl">💪 运动打卡</span><b class="ov-sport">0</b><span class="unit">天</span></div>
+        <div class="ov-row"><span class="lbl">📝 错题</span><b class="ov-mistake">0</b><span class="unit">道</span></div>
+        <div class="ov-row"><span class="lbl">💡 灵感</span><b class="ov-idea">0</b><span class="unit">条</span></div>
+        <div class="ov-row"><span class="lbl">📚 作业</span><b class="ov-homework">0</b><span class="unit">份</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 待处理留言 -->
+  <section class="sec">
+    <h2 class="sec-title">📩 待处理留言</h2>
+    <div class="card">
+      <div class="empty" id="msgEmpty">没有待处理的留言~</div>
+      <div id="msgList"></div>
+    </div>
+  </section>
+
+  <!-- 最近错题 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2 class="sec-title">📝 最近错题</h2>
+      <div class="tab-strip" id="mistakeTabs"></div>
+    </div>
+    <div class="list" id="mistakeList"></div>
+  </section>
+
+  <!-- 最近作业 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2 class="sec-title">📚 最近作业</h2>
+      <div class="tab-strip" id="homeworkTabs"></div>
+    </div>
+    <div class="list" id="homeworkList"></div>
+  </section>
+
+  <!-- 最近灵感 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2 class="sec-title">💡 最近灵感</h2>
+      <div class="tab-strip" id="inspirationTabs"></div>
+    </div>
+    <div class="list" id="inspirationList"></div>
+  </section>
+
+  <!-- 健康提醒 -->
+  <section class="sec">
+    <h2 class="sec-title">💪 健康提醒</h2>
+    <div id="healthList"></div>
+  </section>
+
+  <!-- 底部简报 -->
+  <section class="sec">
+    <button type="button" class="report-btn" id="reportBtn">生成本月简报</button>
+    <div class="report-tip">点击后，在 WorkBuddy 里发送对应指令即可生成</div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var PARENT_PW = '1234';
+  var LOGIN_KEY = 'wb_parent_logged';
+  var PROC_KEY  = 'wb_parent_processed';
+
+  var DATA = {
+    weekly_checkin: [], messages: [], mistakes: [], homework: [], inspirations: [], health_records: []
+  };
+  var pstate = { tab: 'yueyue' };
+
+  function $(id){ return document.getElementById(id); }
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function esc(s){
+    s = (s == null) ? '' : String(s);
+    return s.replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  /* ---- 已处理持久化（同一设备内，重新打开仍记得） ---- */
+  function loadProcessed(){
+    try{ return JSON.parse(localStorage.getItem(PROC_KEY) || '[]'); }catch(e){ return []; }
+  }
+  function saveProcessed(arr){
+    try{ localStorage.setItem(PROC_KEY, JSON.stringify(arr)); }catch(e){}
+  }
+
+  /* ---- 数据归一化 ---- */
+  function normalize(json){
+    if(!json || typeof json !== 'object') return;
+    ['weekly_checkin','messages','mistakes','homework','inspirations','health_records'].forEach(function(k){
+      if(Array.isArray(json[k])) DATA[k] = json[k];
+    });
+    // 把本地标记过「已处理」的留言同步为已处理
+    var proc = loadProcessed();
+    if(proc.length){
+      DATA.messages.forEach(function(m){
+        if(m.id && proc.indexOf(m.id) !== -1) m.status = '已回复';
+      });
+    }
+  }
+
+  function hasData(){
+    return DATA.weekly_checkin.length || DATA.messages.length || DATA.mistakes.length
+        || DATA.homework.length || DATA.inspirations.length || DATA.health_records.length;
+  }
+
+  /* ---- 本周日期范围（周一 ~ 周日） ---- */
+  function weekRange(){
+    var now = new Date();
+    var dow = now.getDay();              // 0=周日
+    var diffToMon = (dow === 0 ? -6 : 1 - dow);
+    var mon = new Date(now); mon.setDate(now.getDate() + diffToMon); mon.setHours(0,0,0,0);
+    var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    return { mon: mon, sun: sun };
+  }
+  function fmt(d){ return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function inRange(dateStr, mon, sun){ return dateStr >= fmt(mon) && dateStr <= fmt(sun); }
+
+  function countCheckin(kid, kind, mon, sun){
+    var c = 0;
+    DATA.weekly_checkin.forEach(function(rec){
+      if(rec.date && inRange(rec.date, mon, sun) && rec[kid] && rec[kid][kind]) c++;
+    });
+    return c;
+  }
+  function countOwner(arr, kid){ return arr.filter(function(x){ return x.owner === kid; }).length; }
+
+  function latest(arr, kid, n){
+    return arr.filter(function(x){ return x.owner === kid; })
+              .slice()
+              .sort(function(a, b){ return (b.date || '').localeCompare(a.date || ''); })
+              .slice(0, n);
+  }
+
+  /* ---- 渲染：概览 ---- */
+  function renderOverview(){
+    var wr = weekRange();
+    $('weekRange').textContent = fmt(wr.mon) + ' ~ ' + fmt(wr.sun);
+    ['yueyue','chengcheng'].forEach(function(kid){
+      var card = $(kid + 'Card');
+      if(!card) return;
+      card.querySelector('.ov-read').textContent     = countCheckin(kid, 'read', wr.mon, wr.sun);
+      card.querySelector('.ov-sport').textContent    = countCheckin(kid, 'sport', wr.mon, wr.sun);
+      card.querySelector('.ov-mistake').textContent  = countOwner(DATA.mistakes, kid);
+      card.querySelector('.ov-idea').textContent     = countOwner(DATA.inspirations, kid);
+      card.querySelector('.ov-homework').textContent = countOwner(DATA.homework, kid);
+    });
+  }
+
+  /* ---- 渲染：待处理留言 ---- */
+  function renderMessages(){
+    var box = $('msgList');
+    box.innerHTML = '';
+    var pending = DATA.messages.filter(function(m){ return m.status === '待处理'; });
+    if(pending.length === 0){ $('msgEmpty').hidden = false; return; }
+    $('msgEmpty').hidden = true;
+    pending.forEach(function(m){
+      var item = document.createElement('div');
+      item.className = 'msg-item';
+      var main = document.createElement('div');
+      main.className = 'msg-main';
+      var head = document.createElement('div');
+      head.className = 'msg-head';
+      var name = document.createElement('span');
+      name.className = 'msg-name ' + (m.owner === 'yueyue' ? 'yue' : 'cheng');
+      name.textContent = (m.owner === 'yueyue') ? '玥玥' : '程程';
+      var time = document.createElement('span');
+      time.className = 'msg-time';
+      time.textContent = m.date || '';
+      head.appendChild(name); head.appendChild(time);
+      var body = document.createElement('div');
+      body.className = 'msg-body';
+      body.textContent = m.text || '';
+      main.appendChild(head); main.appendChild(body);
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'done-btn'; btn.textContent = '已处理';
+      btn.addEventListener('click', function(){
+        m.status = '已回复';
+        var proc = loadProcessed();
+        if(m.id && proc.indexOf(m.id) === -1){ proc.push(m.id); saveProcessed(proc); }
+        renderMessages();
+      });
+      item.appendChild(main); item.appendChild(btn);
+      box.appendChild(item);
+    });
+  }
+
+  /* ---- 渲染：标签切换条（三块共用同一 tab 状态） ---- */
+  function renderTabStrips(){
+    ['mistakeTabs','homeworkTabs','inspirationTabs'].forEach(function(id){
+      var c = $(id);
+      c.innerHTML = '';
+      ['yueyue','chengcheng'].forEach(function(kid){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tab-btn' + (pstate.tab === kid ? ' active' : '');
+        b.textContent = (kid === 'yueyue') ? '玥玥' : '程程';
+        b.addEventListener('click', function(){ pstate.tab = kid; renderLists(); });
+        c.appendChild(b);
+      });
+    });
+  }
+
+  /* ---- 渲染：最近错题 / 作业 / 灵感 ---- */
+  function renderLists(){
+    renderTabStrips();
+    renderMistakes();
+    renderHomework();
+    renderInspirations();
+  }
+
+  function renderMistakes(){
+    var box = $('mistakeList');
+    box.innerHTML = '';
+    var items = latest(DATA.mistakes, pstate.tab, 5);
+    if(items.length === 0){ box.innerHTML = '<div class="empty">还没有错题记录~</div>'; return; }
+    items.forEach(function(x){
+      var card = document.createElement('div');
+      card.className = 'mini-card';
+      card.innerHTML =
+        '<div class="mc-top"><span class="mc-tag">' + esc(x.subject) + '</span><span class="mc-date">' + esc(x.date || '') + '</span></div>' +
+        '<div class="mc-point">' + esc(x.point || '') + '</div>' +
+        '<div class="mc-reason">错因：' + esc(x.reason || '') + '</div>';
+      box.appendChild(card);
+    });
+  }
+
+  function renderHomework(){
+    var box = $('homeworkList');
+    box.innerHTML = '';
+    var items = latest(DATA.homework, pstate.tab, 5);
+    if(items.length === 0){ box.innerHTML = '<div class="empty">还没有作业记录~</div>'; return; }
+    items.forEach(function(x){
+      var card = document.createElement('div');
+      card.className = 'mini-card';
+      card.innerHTML =
+        '<div class="mc-top"><span class="mc-tag">' + esc(x.subject) + '</span><span class="mc-date">' + esc(x.date || '') + '</span></div>' +
+        '<div class="mc-point">' + esc(x.topic || '') + '</div>' +
+        '<div class="mc-reason">完成情况：' + esc(x.status || '') + '</div>';
+      box.appendChild(card);
+    });
+  }
+
+  function renderInspirations(){
+    var box = $('inspirationList');
+    box.innerHTML = '';
+    var items = latest(DATA.inspirations, pstate.tab, 5);
+    if(items.length === 0){ box.innerHTML = '<div class="empty">还没有灵感记录~</div>'; return; }
+    items.forEach(function(x){
+      var card = document.createElement('div');
+      card.className = 'mini-card';
+      card.innerHTML =
+        '<div class="mc-top"><span class="mc-tag">' + esc(x.topic || '') + '</span><span class="mc-date">' + esc(x.type || '') + '</span></div>' +
+        '<div class="mc-reason">' + esc(x.idea || '') + '</div>';
+      box.appendChild(card);
+    });
+  }
+
+  /* ---- 渲染：健康提醒（本月） ---- */
+  function renderHealth(){
+    var box = $('healthList');
+    box.innerHTML = '';
+    var now = new Date();
+    var y = now.getFullYear(), mo = now.getMonth() + 1;
+    ['yueyue','chengcheng'].forEach(function(kid){
+      var rec = DATA.health_records.filter(function(h){ return h.owner === kid && h.year === y && h.month === mo; })[0];
+      var recorded = !!(rec && rec.recorded);
+      var row = document.createElement('div');
+      row.className = 'health-row' + (recorded ? '' : ' warn');
+      row.innerHTML =
+        '<span class="h-name ' + (kid === 'yueyue' ? 'yue' : 'cheng') + '">' + (kid === 'yueyue' ? '玥玥' : '程程') + '</span>' +
+        '<span class="h-status">' + (recorded ? '✅ 本月已记录' : '🔴 本月还未记录') + '</span>';
+      box.appendChild(row);
+    });
+  }
+
+  /* ---- 统一渲染 ---- */
+  function renderAll(){
+    $('emptyBanner').hidden = hasData();
+    renderOverview();
+    renderMessages();
+    renderLists();
+    renderHealth();
+  }
+
+  /* ---- 数据加载 ---- */
+  function loadData(cb){
+    if(typeof fetch !== 'function'){ cb(); return; }
+    fetch('data.json', { cache:'no-cache' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(json){ normalize(json); cb(); })
+      .catch(function(){ cb(); });   // 本地 file:// 或无 data.json → 当空数据
+  }
+
+  /* ---- 登录态 ---- */
+  function tryLogin(){
+    var v = $('pwInput').value;
+    if(v === PARENT_PW){
+      try{ sessionStorage.setItem(LOGIN_KEY, '1'); }catch(e){}
+      showApp();
+    }else{
+      $('pwError').hidden = false;
+    }
+  }
+  function showApp(){
+    $('login').hidden = true;
+    $('app').hidden = false;
+    $('pwInput').value = '';
+    $('pwError').hidden = true;
+    loadData(renderAll);
+  }
+  function checkLogin(){
+    var ok = false;
+    try{ ok = sessionStorage.getItem(LOGIN_KEY) === '1'; }catch(e){}
+    if(ok){ showApp(); }
+    else { $('login').hidden = false; $('app').hidden = true; }
+  }
+
+  /* ---- 初始化 ---- */
+  function init(){
+    $('loginBtn').addEventListener('click', tryLogin);
+    $('pwInput').addEventListener('keydown', function(e){ if(e.key === 'Enter') tryLogin(); });
+    $('logoutBtn').addEventListener('click', function(){
+      try{ sessionStorage.removeItem(LOGIN_KEY); }catch(e){}
+      $('app').hidden = true;
+      $('login').hidden = false;
+    });
+    $('reportBtn').addEventListener('click', function(){
+      var mo = new Date().getMonth() + 1;
+      window.alert('请在 WorkBuddy 发送指令：生成玥玥' + mo + '月月度复盘');
+    });
+    checkLogin();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+</body>
+</html>

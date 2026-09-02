@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>爸妈分享的视频 · 马伯庸日记法</title>
+<style>
+  :root{
+    --page:#fdf6ea; --card:#ffffff; --ink:#4a3b32; --ink-soft:#9c8b7d;
+    --line:#f0e3ce; --accent:#ff8a4c; --accent-deep:#f2702e; --gold:#ffc94d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;padding:0 16px calc(48px + env(safe-area-inset-bottom));
+    background:var(--page);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    font-size:18px;line-height:1.8;-webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:700px;margin:0 auto;}
+  header{text-align:center;padding:30px 8px 14px;}
+  header h1{font-size:26px;margin:0 0 4px;}
+  header .sub{color:var(--ink-soft);font-size:16px;margin:0;}
+  .card{
+    background:var(--card);border-radius:20px;padding:18px 20px;margin-bottom:22px;
+    box-shadow:0 3px 12px rgba(120,90,40,.07);border:1px solid var(--line);
+  }
+  .card h2{font-size:21px;font-weight:700;margin:0 0 12px;}
+  .card p{margin:0 0 10px;}
+  .card p:last-child{margin-bottom:0;}
+  .intro{background:linear-gradient(135deg,#fff7ec,#fdeede);}
+  /* 视频大按钮 */
+  .video-btn{
+    display:flex;align-items:center;gap:16px;
+    background:var(--card);border-radius:18px;border:1px solid var(--line);
+    box-shadow:0 4px 16px rgba(120,90,40,.10);
+    padding:18px 20px;text-decoration:none;color:var(--ink);
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .video-btn:hover{transform:scale(1.02);background:#fbf4e8;}
+  .video-btn:active{transform:scale(.98);}
+  .video-btn .play{
+    flex-shrink:0;width:58px;height:58px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--gold));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-btn .play svg{width:26px;height:26px;fill:#fff;margin-left:3px;}
+  .video-btn .vt{font-size:20px;font-weight:700;line-height:1.5;}
+  .video-btn .vd{font-size:15px;color:var(--ink-soft);}
+  footer{text-align:center;margin-top:30px;padding-top:20px;
+    border-top:1px solid var(--line);color:var(--ink-soft);font-size:16px;line-height:1.8;}
+  footer a{color:var(--accent-deep);text-decoration:none;font-weight:700;}
+  @media (max-width:480px){ header h1{font-size:22px;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>爸妈分享了一个视频</h1>
+    <p class="sub">2026-09-02 · 一起看</p>
+  </header>
+
+  <section class="card intro">
+    <h2>📹 今天看什么</h2>
+    <p>《五步教你马伯庸日记法！！亲测有效！》——作家马伯庸分享的写日记小妙招。</p>
+    <p>不用写长篇大论，每天挑"最想记住的一件事"，写 3–5 句就好。重点是<b>多观察、多问几个为什么</b>。</p>
+  </section>
+
+  <section class="card">
+    <h2>▶ 点开看视频</h2>
+    <a class="video-btn" href="https://v.douyin.com/imOcqj4sbJE/" target="_blank" rel="noopener">
+      <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+      <span>
+        <span class="vt">五步教你马伯庸日记法（亲测有效）</span><br>
+        <span class="vd">来自抖音 · VibeJot 的作品 ｜ 点击新窗口打开</span>
+      </span>
+    </a>
+    <p style="margin-top:12px;color:var(--ink-soft);font-size:15px;">小提示：抖音网页版有时需要在 App 里打开才能播放，点不开就让爸妈用手机扫一下～</p>
+  </section>
+
+  <section class="card">
+    <h2>✍️ 看完试着做</h2>
+    <p>一起聊聊：你今天最想记下来的那件事是什么？</p>
+    <p>玥玥可以写"今天学校里一个有意思的细节"；程程可以画+写"今天最开心的一件事"。周末挑一篇认真写进打卡/灵感本。</p>
+  </section>
+
+  <footer>
+    看完后，和爸妈聊聊你的想法吧～<br>
+    <a href="index.html">← 返回学习小屋</a>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>玥玥和程程的学习小屋</title>
+<style>
+  :root{
+    --page:#fdf6ea;            /* 暖米色底 */
+    --card:#ffffff;
+    --ink:#4a3b32;             /* 暖深棕 */
+    --ink-soft:#9c8b7d;
+    --line:#f0e3ce;
+    --accent:#ff8a4c;
+    --accent-deep:#f2702e;
+    --gold:#ffc94d;
+    --yue:#ff8a7a;
+    --yue-bg:#ffe6de;
+    --cheng:#e6a23c;
+    --cheng-bg:#ffefd1;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;padding:0 16px calc(48px + env(safe-area-inset-bottom));
+    background:var(--page);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    font-size:18px;line-height:1.8;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:700px;margin:0 auto;}
+
+  /* ===== 1. 顶部标题 ===== */
+  header{text-align:center;padding:30px 8px 14px;}
+  header h1{font-size:32px;margin:0 0 4px;letter-spacing:1px;}
+  header .sub{color:var(--ink-soft);font-size:18px;margin:0;}
+  header .date-weather{
+    color:var(--ink-soft);font-size:15px;margin-top:8px;line-height:1.6;
+  }
+  header .stamp{
+    display:inline-block;margin-top:12px;padding:5px 18px;border-radius:999px;
+    background:var(--gold);color:#7a5a00;font-size:16px;font-weight:700;
+    box-shadow:0 3px 10px rgba(230,180,60,.25);
+  }
+
+  /* ===== 2. 模式切换 ===== */
+  .mode-switch{
+    display:flex;gap:6px;background:#f3e6cf;border-radius:16px;
+    padding:6px;margin:14px 0 22px;
+  }
+  .mode-switch button{
+    flex:1;border:none;background:#ece1cd;border-radius:12px;
+    padding:12px 0;font-size:18px;font-weight:600;color:#6b5a4c;
+    cursor:pointer;min-height:44px;font-family:inherit;
+    transition:all .2s ease;
+  }
+  .mode-switch button:hover{transform:scale(1.02);}
+  .mode-switch button:active{transform:scale(.98);}
+  .mode-switch button.active{
+    background:var(--accent-deep);color:#fff;font-weight:700;
+    box-shadow:0 2px 8px rgba(242,112,46,.25);
+  }
+  .mode-switch button.active.mode-yue{background:var(--yue);}
+  .mode-switch button.active.mode-cheng{background:var(--cheng);}
+
+  /* ===== 通用卡片 ===== */
+  section{margin-bottom:26px;}
+  .sec-title{
+    font-size:21px;font-weight:700;margin:0 0 12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card{
+    background:var(--card);border-radius:20px;padding:16px 18px;
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    border:1px solid var(--line);
+  }
+  /* 待办区有待处理留言时高亮 */
+  .card.todo-highlight{
+    border:2px solid #FF9800;
+    background:#FFF3E0;
+  }
+
+  /* ===== 3. 待办区 ===== */
+  .empty{
+    color:var(--ink-soft);text-align:center;padding:14px 8px;font-size:18px;
+  }
+  .todo-item{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:12px 0;border-bottom:1px dashed var(--line);
+  }
+  .todo-item:last-child{border-bottom:none;padding-bottom:4px;}
+  .todo-badge{
+    flex-shrink:0;font-size:14px;font-weight:700;color:#fff;
+    border-radius:8px;padding:2px 10px;margin-top:4px;
+  }
+  .todo-badge.yue{background:var(--yue);}
+  .todo-badge.cheng{background:var(--cheng);}
+  .todo-item .txt{flex:1;word-break:break-word;}
+  .todo-item .meta{font-size:15px;color:var(--ink-soft);}
+  .todo-done{color:var(--ink-soft);text-decoration:line-through;}
+
+  /* ===== 4. 四大入口区 ===== */
+  .entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .entry-card{
+    background:var(--card);border-radius:20px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:22px 16px;text-align:center;text-decoration:none;color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    min-height:130px;justify-content:center;
+    transition:transform .2s ease, background-color .2s ease, box-shadow .2s ease;
+    cursor:pointer;font-family:inherit;
+  }
+  .entry-card:hover{
+    transform:scale(1.02);background:#fbf4e8;
+    box-shadow:0 6px 18px rgba(120,90,40,.13);
+  }
+  .entry-card:active{transform:scale(.98);}
+  .entry-card .icon{font-size:40px;line-height:1;}
+  .entry-card .name{font-size:19px;font-weight:700;}
+  .entry-card .desc{font-size:15px;color:var(--ink-soft);line-height:1.6;}
+
+  /* 单孩模式：卡片按孩子着色（暖/冷） */
+  .entry-card.kid-yue{border-color:#f3c9e2;}
+  .entry-card.kid-yue:hover{background:#fdf2f8;}
+  .entry-card.kid-cheng{border-color:#cfe4fb;}
+  .entry-card.kid-cheng:hover{background:#eff5ff;}
+
+  /* 一起看模式：两个孩子各一列 */
+  .entry-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;}
+  .entry-col{display:flex;flex-direction:column;gap:12px;}
+  .entry-col-title{
+    font-size:17px;font-weight:700;text-align:center;
+    padding:8px 0;border-radius:12px;margin-bottom:2px;
+  }
+  .entry-col-title.yue{color:#d56fae;background:#fdf2f8;}
+  .entry-col-title.cheng{color:#2f86e6;background:#eff5ff;}
+
+  /* ===== 每日英语固定卡片 ===== */
+  .english-card{
+    background:linear-gradient(135deg,#eef6ff,#eafff4);
+    border-radius:20px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:16px 18px;margin-top:16px;
+  }
+  .english-card[hidden]{display:none;}
+  .english-title{font-size:21px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .eng-block{padding:10px 0;}
+  .eng-block + .eng-block{border-top:1px dashed var(--line);}
+  .eng-word-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .eng-word{font-size:26px;font-weight:700;color:var(--ink);}
+  .eng-phon{font-size:16px;color:var(--ink-soft);}
+  .eng-zh{font-size:18px;color:var(--ink);margin-top:4px;}
+  .eng-sentence{font-size:17px;color:var(--ink);margin-top:6px;line-height:1.7;}
+  .eng-sentence .cn{color:var(--ink-soft);font-size:15px;}
+  .speak-btn{
+    border:none;cursor:pointer;font-family:inherit;
+    width:44px;height:44px;border-radius:50%;flex-shrink:0;
+    background:#fff;color:var(--accent-deep);font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.10);
+    transition:transform .15s ease, background-color .15s ease;
+  }
+  .speak-btn:hover{transform:scale(1.06);}
+  .speak-btn:active{transform:scale(.9);background:#ffe9da;}
+
+  /* ===== 今日一句话 + 每日打卡 ===== */
+  .today-card{
+    background:var(--card);border-radius:20px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:16px 18px;margin-top:16px;
+  }
+  .today-date{
+    text-align:center;color:var(--ink-soft);font-size:15px;
+    padding-bottom:10px;border-bottom:1px dashed var(--line);margin-bottom:12px;
+  }
+  .ts-card{
+    cursor:pointer;border-radius:14px;padding:12px 14px;
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .ts-card + .ts-card{margin-top:10px;}
+  .ts-card:hover{transform:scale(1.02);background:#fbf4e8;}
+  .ts-card:active{transform:scale(.98);}
+  .ts-label{font-size:15px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .kid-chip{
+    font-size:14px;font-weight:700;color:#fff;border-radius:8px;padding:1px 10px;flex-shrink:0;
+  }
+  .kid-chip.yue{background:var(--yue);}
+  .kid-chip.cheng{background:var(--cheng);}
+  .ts-main{font-size:19px;font-weight:600;line-height:1.8;margin-top:6px;}
+  .ts-main .phon{color:var(--ink-soft);font-size:16px;font-weight:400;}
+  .ts-extra{
+    border-top:1px dashed var(--line);margin-top:10px;padding-top:8px;
+    font-size:16px;line-height:1.8;color:var(--ink);font-weight:400;
+  }
+  .ts-extra[hidden]{display:none;}
+  .ts-extra p{margin:4px 0;}
+  .ts-hint{font-size:13px;color:var(--ink-soft);text-align:right;margin-top:4px;}
+  .check-row{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .check-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .ck-kid{
+    font-size:14px;font-weight:700;color:#fff;border-radius:8px;
+    padding:3px 10px;flex-shrink:0;
+  }
+  .ck-kid.yue{background:var(--yue);}
+  .ck-kid.cheng{background:var(--cheng);}
+  .check-item{
+    flex:1;min-width:150px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+    border:2px solid var(--line);border-radius:14px;padding:12px 14px;
+    cursor:pointer;font-size:18px;font-weight:600;min-height:52px;
+    transition:all .2s ease;background:#fff;
+  }
+  .check-item:hover{transform:scale(1.02);}
+  .check-item:active{transform:scale(.98);}
+  .check-item .ck-box{width:24px;height:24px;flex-shrink:0;cursor:pointer;accent-color:#43a047;}
+  /* 阅读打卡填的书名（打勾后才出现） */
+  .book-input{
+    flex:1 1 100%;margin-top:10px;padding:9px 12px;font-size:16px;font-family:inherit;
+    border:2px solid var(--line);border-radius:12px;background:#fffdf8;color:var(--ink);
+  }
+  .book-input:focus{outline:none;border-color:#ffb27a;}
+  .check-item.done{border-color:#66bb6a;background:#e8f5e9;color:#2e7d32;}
+
+  /* 连续打卡天数提示（位于打卡区上方） */
+  #streakArea{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .streak-line{
+    display:flex;align-items:center;gap:10px;
+    background:#fff7ec;border:1px solid #ffe2bd;border-radius:14px;
+    padding:10px 14px;font-size:17px;line-height:1.6;
+  }
+  .streak-line.yue{background:#fff1f5;border-color:#f7d4e4;}
+  .streak-line.cheng{background:#eef6ff;border-color:#d4e6fb;}
+  .streak-line .streak-text{flex:1;word-break:break-word;}
+  .streak-line .streak-text b{color:var(--accent-deep);font-size:20px;}
+
+  /* 家长回复（待处理留言下方） */
+  .reply-line{
+    margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);
+    font-size:15px;color:#9c8b7d;line-height:1.7;
+  }
+
+  /* ===== 5. 给爸妈的提示条 ===== */
+  .parent-tip{
+    border:2px dashed #d8c5a5;border-radius:14px;
+    background:#fbf3e2;color:#9c8b7d;
+    font-size:15px;line-height:1.8;padding:10px 16px;margin-top:16px;
+  }
+  .parent-tip[hidden]{display:none;}
+
+  /* ===== 6. 本周共学 ===== */
+  .week-current{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border-radius:20px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:20px 18px;cursor:pointer;text-decoration:none;color:var(--ink);
+    transition:transform .2s ease, background-color .2s ease, box-shadow .2s ease;
+  }
+  .week-current:hover{
+    transform:scale(1.02);background:#fbf4e8;
+    box-shadow:0 6px 18px rgba(120,90,40,.13);
+  }
+  .week-current:active{transform:scale(.98);}
+  .week-current .book{font-size:36px;line-height:1;}
+  .week-current .wt{font-size:20px;font-weight:700;}
+  .week-current .wd{font-size:15px;color:var(--ink-soft);}
+  .week-current .arrow{margin-left:auto;font-size:22px;color:var(--accent);}
+
+  /* ===== 7. 历史周次 ===== */
+  .week-history{display:flex;flex-direction:column;gap:10px;}
+  .week-mini{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border-radius:14px;border:1px solid var(--line);
+    padding:12px 16px;text-decoration:none;color:var(--ink);
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .week-mini:hover{transform:scale(1.02);background:#fbf4e8;}
+  .week-mini:active{transform:scale(.98);}
+  .week-mini .num{
+    flex-shrink:0;width:44px;height:44px;border-radius:12px;
+    background:var(--cheng-bg);color:#c07d16;font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  .week-mini .t{flex:1;font-size:18px;font-weight:600;}
+  .week-mini .go{color:var(--accent);font-size:18px;}
+
+  /* ===== 8. 视频分享 ===== */
+  .video-list{display:flex;flex-direction:column;gap:12px;}
+  .video-btn{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border-radius:16px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:16px 18px;text-decoration:none;color:var(--ink);
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .video-btn:hover{transform:scale(1.02);background:#fbf4e8;}
+  .video-btn:active{transform:scale(.98);}
+  .video-btn .play{
+    flex-shrink:0;width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--gold));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-btn .play svg{width:22px;height:22px;fill:#fff;margin-left:3px;}
+  .video-btn .vt{font-size:18px;font-weight:700;line-height:1.5;}
+  .video-btn .vd{font-size:15px;color:var(--ink-soft);}
+  /* 嵌入式播放器（B站/YouTube） */
+
+  /* ===== 9. 底部 ===== */
+  footer{
+    text-align:center;margin-top:34px;padding-top:22px;
+    border-top:1px solid var(--line);color:var(--ink-soft);
+  }
+  footer .encourage{
+    color:var(--ink-soft);font-size:16px;margin-bottom:8px;line-height:1.8;
+  }
+  footer .copy{font-size:15px;line-height:1.8;}
+
+  /* ===== 按模式切换整体色调 ===== */
+  body[data-mode="all"]{ --page:#fdf6ea; --accent:#ff8a4c; --accent-deep:#f2702e; --gold:#ffc94d; }
+  body[data-mode="yueyue"]{ --page:#fdf2f8; --accent:#e58fc0; --accent-deep:#d56fae; --gold:#f4c6e4; }
+  body[data-mode="chengcheng"]{ --page:#eff5ff; --accent:#4ea1f3; --accent-deep:#2f86e6; --gold:#bfe0ff; }
+
+  /* ===== 首次打开身份选择遮罩 ===== */
+  .welcome-mask{
+    position:fixed;inset:0;z-index:1000;display:flex;
+    align-items:center;justify-content:center;padding:20px;
+    background:rgba(70,50,40,.55);
+  }
+  .welcome-mask[hidden]{display:none;}
+  .welcome-card{
+    background:#fff;border-radius:24px;padding:30px 24px;
+    max-width:520px;width:100%;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .welcome-card h2{font-size:24px;margin:0 0 20px;line-height:1.6;}
+  .welcome-btns{display:flex;gap:16px;}
+  .welcome-btn{
+    flex:1;min-height:160px;border:none;border-radius:20px;cursor:pointer;
+    color:#fff;font-family:inherit;font-size:22px;font-weight:700;line-height:1.5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    padding:16px;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .welcome-btn span{font-size:16px;font-weight:600;opacity:.9;}
+  .welcome-btn:hover{transform:scale(1.03);box-shadow:0 8px 20px rgba(0,0,0,.18);}
+  .welcome-btn:active{transform:scale(.98);}
+  .welcome-btn.yue{background:linear-gradient(135deg,#f4a6d0,#e07cb4);}
+  .welcome-btn.cheng{background:linear-gradient(135deg,#6fb6f5,#3d8fe0);}
+  .welcome-tip{color:#9c8b7d;font-size:15px;margin:18px 0 0;}
+  @media(max-width:480px){
+    .welcome-btns{gap:10px;}
+    .welcome-btn{min-height:140px;font-size:20px;}
+  }
+
+  /* ===== 周六共读提示条 ===== */
+  .saturday-hint{
+    display:flex;align-items:center;gap:10px;
+    background:#fff4e0;border:2px solid #ffd28a;border-radius:14px;
+    padding:10px 14px;margin:14px 0 0;font-size:16px;color:#9a6a2e;
+  }
+  .saturday-hint[hidden]{display:none;}
+  .saturday-hint .sh-text{flex:1;line-height:1.6;}
+  .saturday-hint .sh-go{
+    border:none;background:var(--accent-deep);color:#fff;font-family:inherit;
+    font-size:16px;font-weight:700;border-radius:10px;padding:8px 14px;
+    cursor:pointer;min-height:40px;white-space:nowrap;transition:transform .15s ease;
+  }
+  .saturday-hint .sh-go:active{transform:scale(.96);}
+  .saturday-hint .sh-close{
+    border:none;background:transparent;color:#9a6a2e;font-size:22px;
+    cursor:pointer;line-height:1;padding:0 4px;
+  }
+
+  /* ===== 家长重置身份按钮 ===== */
+  .reset-btn{
+    display:inline-block;margin-top:6px;background:none;border:none;
+    color:#bcae9e;font-size:13px;font-family:inherit;cursor:pointer;text-decoration:underline;
+  }
+  .reset-btn:hover{color:#9c8b7d;}
+
+  /* ===== 模式内容可见性（JS 控制 data-owner 元素） ===== */
+  .hidden-by-mode{display:none !important;}
+
+  @media (max-width:480px){
+    header h1{font-size:27px;}
+    .entry-grid{gap:10px;}
+    .entry-cols{gap:10px;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 1. 顶部标题 -->
+  <header>
+    <h1>🏡 玥玥和程程的学习小屋</h1>
+    <p class="sub">六年级 · 五年级 | 一起长大，一起学本领</p>
+    <div class="date-weather" id="dateWeather"></div>
+    <span class="stamp">2026学年 · 秋季学期</span>
+  </header>
+
+  <!-- 2. 模式切换 -->
+  <div class="mode-switch" id="modeSwitch">
+    <button type="button" data-mode="all" class="active">一起看</button>
+    <button type="button" data-mode="yueyue" class="mode-yue">玥玥模式</button>
+    <button type="button" data-mode="chengcheng" class="mode-cheng">程程模式</button>
+  </div>
+
+  <!-- 周六共读提示条 -->
+  <div class="saturday-hint" id="saturdayHint" hidden>
+    <span class="sh-text" id="shText"></span>
+    <button type="button" class="sh-go" id="shGo">切换到共读</button>
+    <button type="button" class="sh-close" id="shClose" aria-label="关闭">×</button>
+  </div>
+
+  <!-- 3. 待办区：爸妈要回复的事 -->
+  <section>
+    <h2 class="sec-title">📌 爸妈要回复的事</h2>
+    <div class="card" id="todoCard">
+      <div class="empty" id="todoEmpty">暂时没有待回复的事~</div>
+      <div id="todoList"></div>
+    </div>
+  </section>
+
+  <!-- 4. 四大入口区（按模式动态渲染：单孩 4 个 / 一起看 8 个分两列） -->
+  <section>
+    <h2 class="sec-title">✏️ 我要做的事</h2>
+    <div id="entryArea"></div>
+
+    <!-- 每日英语（固定模块，位于今日一句话上方） -->
+    <div class="english-card" id="englishCard">
+      <div class="english-title">每日英语</div>
+      <div id="englishBody"></div>
+    </div>
+
+    <!-- 今日一句话 + 每日打卡 -->
+    <div class="today-card" id="todayCard">
+      <div class="today-date" id="todayDate"></div>
+      <div id="sentenceCards"></div>
+      <div id="streakArea"></div>
+      <div class="check-row" id="checkRow"></div>
+    </div>
+  </section>
+
+  <!-- 6. 本周共学 -->
+  <section>
+    <h2 class="sec-title">📖 本周共学</h2>
+    <div id="currentWeek"></div>
+  </section>
+
+  <!-- 7. 历史周次列表 -->
+  <section>
+    <h2 class="sec-title">🗂️ 历史共学</h2>
+    <div class="week-history" id="weekHistory">
+      <div class="empty">以后这里会有我们一起学过的所有内容~</div>
+    </div>
+  </section>
+
+  <!-- 8. 视频分享区 -->
+  <section>
+    <h2 class="sec-title">🎬 最近分享</h2>
+    <div class="video-list" id="videoList">
+      <div class="empty">爸妈看到好视频会分享到这里~</div>
+    </div>
+  </section>
+
+  <!-- 9. 底部 -->
+  <footer>
+    <div class="encourage" id="encourage"></div>
+    <div class="copy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
+    <button type="button" class="reset-btn" id="resetIdentity">切换身份</button>
+  </footer>
+
+</div>
+
+  <!-- 首次打开身份选择遮罩 -->
+  <div class="welcome-mask" id="welcomeMask" hidden>
+    <div class="welcome-card">
+      <h2>欢迎来到学习小屋！🏡<br>你是谁呀？</h2>
+      <div class="welcome-btns">
+        <button type="button" class="welcome-btn yue" data-user="yueyue">👧<br>我是玥玥<br><span>六年级</span></button>
+        <button type="button" class="welcome-btn cheng" data-user="chengcheng">👦<br>我是程程<br><span>五年级</span></button>
+      </div>
+      <p class="welcome-tip">选一次就好，以后会自动记住哦~</p>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+   * 配置区：金山表单链接（占位符，后续把真实链接填到这里即可，
+   * 或写进同目录 data.json 的 formLinks 字段，提示条会自动消失）
+   * ============================================================ */
+  /* 8 套金山表单链接：每个孩子各 4 套（已确认有效） */
+  var FORM_LINKS = {
+    yueyue: {
+      message : 'https://f.kdocs.cn/g/pER3rHBg/',
+      mistake : 'https://f.kdocs.cn/g/ZbpNxl6m/',
+      idea    : 'https://f.kdocs.cn/g/0OLNjONU/',
+      homework: 'https://f.kdocs.cn/g/A91UrXUM/'
+    },
+    chengcheng: {
+      message : 'https://f.kdocs.cn/g/469tWXsu/',
+      mistake : 'https://f.kdocs.cn/g/vXq1aUMQ/',
+      idea    : 'https://f.kdocs.cn/g/o2E3WO4z/',
+      homework: 'https://f.kdocs.cn/g/LTPxnKAH/'
+    }
+  };
+  /* 四大入口的展示信息（图标/名称/描述），顺序即显示顺序 */
+  var ENTRY_META = [
+    { key:'message', icon:'📩', name:'留言给爸妈', desc:'有什么想说的都可以写' },
+    { key:'mistake', icon:'📝', name:'提交错题本', desc:'拍照上传 + 写错因' },
+    { key:'idea',    icon:'💡', name:'记录灵感与思考', desc:'突然想到的问题都记下来' },
+    { key:'homework',icon:'📚', name:'上传学校作业', desc:'拍下作业，存进成长档案' }
+  ];
+
+  /* 天气先写死，后面可以接天气API改这里 */
+  var WEATHER = { city: '广州', text: '晴', temp: '28℃' };
+
+  /* 鼓励语：每次刷新随机显示一句 */
+  var ENCOURAGES = [
+    '今天也辛苦了，你很棒！💪',
+    '每天进步一点点，就很了不起！🌱',
+    '认真学习的你们最闪亮！✨',
+    '错了没关系，弄懂了就是收获！👏',
+    '你们是彼此最好的伙伴，继续加油！🤝'
+  ];
+
+  /* ============================================================
+   * 每日一句话（按周配置，支持多周自动切换）
+   * 按星期几取内容：1周一英语 2周二常识 3周三歇后语 4周四情商 5周五科普，0/6周末
+   * 每周更新时：新建 WEEK_N 数据 + 在 WEEKS 数组追加一行（起止日期）
+   * ============================================================ */
+  var KID_NAMES = { yueyue: '玥玥', chengcheng: '程程' };
+  var WEEKDAY_LABEL = {
+    1: '周一 · 生活常识', 2: '周二 · 歇后语', 3: '周三 · 情商金句',
+    4: '周四 · 科普冷知识', 5: '周五 · 读书名言', 6: '周末愉快', 0: '周末愉快'
+  };
+  /* 第1周（2026-09-07 ~ 2026-09-13） */
+  var WEEK_1 = {
+    yueyue: {
+      1: {
+        main: '<b>I need a pen, but I want a kitten.</b><br>我需要一支笔，但我想要一只小猫。<br><span class="phon">need /niːd/ 需要 · want /wɒnt/ 想要</span>',
+        extra: '<p>💡 分清两个词：<b>need</b>＝没有它不行，<b>want</b>＝有了更开心。</p><p>例句1：Plants need water and sunshine. 植物需要水和阳光。</p><p>例句2：I want a new bike, but I don\'t need one. 我想要一辆新自行车，但其实不需要。</p>'
+      },
+      2: {
+        main: '<b>带壳的生鸡蛋不能放进微波炉加热，会炸开！</b><br>想吃热鸡蛋：先剥壳再加热，或者用水煮。',
+        extra: '<p>⚠️ 微波炉安全三条：</p><p>1. 密封的袋装牛奶不能直接加热，要先倒出来。</p><p>2. 加热饭菜盖子要留条缝，不然会喷得到处都是。</p><p>3. 万一烫到，马上用流动凉水冲15分钟，别抹牙膏。</p>'
+      },
+      3: {
+        main: '<b>外甥打灯笼——照旧（舅）</b><br>意思：还是老样子，一切照原来办。',
+        extra: '<p>再来两个常见的：</p><p>芝麻开花——节节高（日子越过越好）</p><p>小葱拌豆腐——一清二白（清清楚楚，干干净净）</p>'
+      },
+      4: {
+        main: '<b>生气的时候，先数到十，再开口说话。</b>',
+        extra: '<p>为什么管用？怒气最猛的头10秒过去，脑子就冷静一半了。</p><p>还可以做三次深呼吸：吸气4秒，呼气4秒。</p><p>说话时试着说「我有点生气，因为……」，而不是只发脾气。</p>'
+      },
+      5: {
+        main: '<b>蜂蜜是世界上唯一不会变质的食物。</b><br>考古学家在埃及金字塔里发现3000年前的蜂蜜，居然还能吃！',
+        extra: '<p>为什么：蜂蜜糖多水少，细菌在里面活不下去。</p><p>所以蜂蜜保存很简单：盖紧盖子就行，不用放冰箱。</p><p>挖蜂蜜的勺子要干的，别带水进去。</p>'
+      },
+      6: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      },
+      0: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      }
+    },
+    chengcheng: {
+      1: {
+        main: '<b>I need water. I want juice.</b><br>我需要喝水，我想要果汁。<br><span class="phon">need /niːd/ 需要 · want /wɒnt/ 想要</span>',
+        extra: '<p>💡 口渴了必须喝水，这是 <b>need</b>（需要）；果汁只是想喝，这是 <b>want</b>（想要）。</p><p>例句1：I need sleep. 我需要睡觉。</p><p>例句2：I want a toy car. 我想要一辆玩具车。</p>'
+      },
+      2: {
+        main: '<b>流鼻血时：头稍微低下来，捏住鼻子两边软的地方，用嘴呼吸。</b><br>不要把头往后仰！等5-10分钟再松手。',
+        extra: '<p>为什么不能仰头？血会倒流进喉咙，看起来不流了，其实没有止血。</p><p>平时别抠鼻子；鼻子干的时候，可以涂一点点凡士林。</p>'
+      },
+      3: {
+        main: '<b>小葱拌豆腐——一清二白</b><br>意思：清清楚楚、干干净净。',
+        extra: '<p>再来两个常见的：</p><p>猪八戒照镜子——里外不是人</p><p>芝麻开花——节节高（越来越好）</p>'
+      },
+      4: {
+        main: '<b>说「对不起」不丢人，勇敢认错的孩子最棒。</b>',
+        extra: '<p>道歉三步走：① 说对不起 ② 说做错了什么 ③ 说下次怎么做。</p><p>打翻水杯后说对不起，再拿抹布擦干净，这就叫负责任。</p>'
+      },
+      5: {
+        main: '<b>章鱼有3个心脏，血还是蓝色的！</b>',
+        extra: '<p>它还有9个脑子：1个大脑在头上，8条腕上各1个小脑。</p><p>血是蓝色，因为血里负责运氧的是铜，不是像我们一样是铁。</p>'
+      },
+      6: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：章鱼有几个心脏？看看他们知不知道~</p>'
+      },
+      0: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：章鱼有几个心脏？看看他们知不知道~</p>'
+      }
+    }
+  };
+
+  /* 第2周（2026-09-14 ~ 2026-09-20） */
+  var WEEK_2 = {
+    yueyue: {
+      1: {
+        main: '<b>brave /breɪv/ 勇敢的</b><br>Be brave and try it one more time! 勇敢一点，再试一次！',
+        extra: '<p>例句1：She is brave enough to ask questions in class. 她勇敢地在课堂上提问。</p><p>例句2：Don\'t be afraid of making mistakes. 别怕犯错。</p>'
+      },
+      2: {
+        main: '<b>遇到火灾：用湿毛巾捂住口鼻，弯腰低姿势，走楼梯往下跑，千万不能坐电梯！</b>',
+        extra: '<p>火灾逃生三条：</p><p>1. 逃跑前先摸门把手：烫说明门外有火，别开门！用湿毛巾堵门缝，去窗口呼救。</p><p>2. 烟往上飘，所以要弯腰、越低越好。</p><p>3. 到了安全的地方再给爸妈打电话，别回头拿东西。</p>'
+      },
+      3: {
+        main: '<b>姜太公钓鱼——愿者上钩</b><br>意思：不用强迫，心甘情愿的人自己会来。',
+        extra: '<p>再来两个常见的：</p><p>八仙过海——各显神通（各有各的本领和办法）</p><p>千里送鹅毛——礼轻情意重（礼物小，心意大）</p>'
+      },
+      4: {
+        main: '<b>先听别人把话说完，再讲你的想法。</b>',
+        extra: '<p>为什么：打断别人说话，对方会觉得不被尊重，聊天容易变成吵架。</p><p>小练习：听别人说话时，数一数他一共讲了几个意思，等他说完再回应。</p><p>想插嘴时，小声提醒自己「等一下」。</p>'
+      },
+      5: {
+        main: '<b>天空是蓝色的，因为阳光穿过空气时，蓝光最容易被撞散，撒得满天都是。</b>',
+        extra: '<p>那为什么朝霞晚霞是红色的？早晚阳光斜着走，要穿过更厚的空气，蓝光半路散没了，红光橙光走完全程。</p><p>这个现象叫「散射」。</p>'
+      },
+      6: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      },
+      0: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      }
+    },
+    chengcheng: {
+      1: {
+        main: '<b>share /ʃer/ 分享</b><br>Let\'s share the cake! 我们一起分蛋糕吧！',
+        extra: '<p>例句1：I share my toys with my brother. 我和弟弟分享玩具。</p><p>例句2：Sharing makes us happy. 分享让我们快乐。</p>'
+      },
+      2: {
+        main: '<b>在商场走丢了：站在原地别乱跑，找穿工作服的叔叔阿姨帮忙。</b>',
+        extra: '<p>三条要记住：</p><p>1. 站在原地不乱跑，爸妈会沿原路回来找你。</p><p>2. 找穿工作服的叔叔阿姨（商场员工、保安），请他们广播找爸妈。</p><p>3. 千万别跟陌生人走，哪怕他说「带你去找爸妈」。</p><p>要背下来：爸妈的手机号！</p>'
+      },
+      3: {
+        main: '<b>八仙过海——各显神通</b><br>意思：各有各的本领，各有各的办法。',
+        extra: '<p>再来两个常见的：</p><p>姜太公钓鱼——愿者上钩（自己愿意，不用强迫）</p><p>泥菩萨过江——自身难保（自己也保不住，帮不了别人）</p>'
+      },
+      4: {
+        main: '<b>害怕的时候，把害怕说出来，它就变小了一半。</b>',
+        extra: '<p>怎么说：直接说「我有点害怕」，说给爸妈、老师听都可以。</p><p>为什么管用：说清楚具体怕什么，大脑就冷静下来，更容易想办法。</p>'
+      },
+      5: {
+        main: '<b>猫的眼睛在黑夜里会发光，因为眼睛里有一层「小镜子」，能把光再反射出去。</b>',
+        extra: '<p>晚上用手电筒照猫，眼睛亮亮的，就是这层镜子在反光。</p><p>这层镜子帮猫在夜里看清东西——人眼睛没有，所以人晚上看东西没那么清楚。</p>'
+      },
+      6: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：猫的眼睛为什么晚上会发光？看看他们知不知道~</p>'
+      },
+      0: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：猫的眼睛为什么晚上会发光？看看他们知不知道~</p>'
+      }
+    }
+  };
+
+  /* 第3周（2026-09-21 ~ 2026-09-27） */
+  var WEEK_3 = {
+    yueyue: {
+      1: {
+        main: '<b>curious /ˈkjʊəriəs/ 好奇的</b><br>Stay curious and ask questions! 保持好奇，多问问题！',
+        extra: '<p>例句1：Curious kids learn faster. 好奇的孩子学得更快。</p><p>例句2：I am curious about the stars. 我对星星很好奇。</p>'
+      },
+      2: {
+        main: '<b>台风来了：待在家里关好门窗，远离玻璃窗，不出门玩，更不去看海看浪。</b>',
+        extra: '<p>台风天三条：</p><p>1. 「台风眼」中心风很小，但过去后大风会再刮回来，别急着出门。</p><p>2. 提前和爸妈一起备好饮用水、食物和手电筒。</p><p>3. 阳台上的花盆、杂物要搬进屋，免得被风吹落砸到人。</p>'
+      },
+      3: {
+        main: '<b>十五个吊桶打水——七上八下</b><br>意思：心里慌慌的、不安稳。',
+        extra: '<p>再来两个常见的：</p><p>竹篮打水——一场空（白忙一场，什么也没得到）</p><p>王婆卖瓜——自卖自夸（自己夸自己）</p>'
+      },
+      4: {
+        main: '<b>夸人要夸具体：不说「你真棒」，要说「你今天的字写得特别工整」。</b>',
+        extra: '<p>为什么：具体的夸奖让人知道哪里做得好，会更开心、更愿意保持。</p><p>练一练：今天夸一次同学或家人，试着说出细节。</p><p>也可以这样夸自己：写完作业挑出自己写得最好的一行。</p>'
+      },
+      5: {
+        main: '<b>先看到闪电，后听到雷声——因为光比声音跑得快得多。</b>',
+        extra: '<p>数一数闪电和雷声之间隔了几秒，除以3，就是雷电离你大约几公里（声音每秒跑约340米）。</p><p>如果闪电和雷声几乎同时响，说明雷就在附近，赶紧回屋别在外面待着。</p>'
+      },
+      6: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      },
+      0: {
+        main: '<b>今天周末，好好放松！</b><br>别忘了：读30分钟书，动一动身体~',
+        extra: '<p>想一想：这一周的每日一句话里，你最喜欢哪一句？讲给爸妈听听。</p>'
+      }
+    },
+    chengcheng: {
+      1: {
+        main: '<b>help /help/ 帮助</b><br>Can I help you? 需要我帮忙吗？',
+        extra: '<p>例句1：I help Mom wash the dishes. 我帮妈妈洗碗。</p><p>例句2：Thank you for your help. 谢谢你的帮助。</p>'
+      },
+      2: {
+        main: '<b>湿手不碰插座、开关和电器！擦干手再用。</b>',
+        extra: '<p>用电安全三条：</p><p>1. 洗完手要擦干才能碰电源，水会导电，很危险。</p><p>2. 别往插座孔里塞东西——金属丝、手指都不行。</p><p>3. 看到电线破了皮，马上告诉大人，自己别碰。</p>'
+      },
+      3: {
+        main: '<b>竹篮打水——一场空</b><br>意思：白忙一场，什么也没得到。',
+        extra: '<p>再来两个常见的：</p><p>十五个吊桶打水——七上八下（心里慌慌的）</p><p>黄鼠狼给鸡拜年——没安好心</p>'
+      },
+      4: {
+        main: '<b>别人夸你的时候，笑着说声「谢谢」就好，不用不好意思。</b>',
+        extra: '<p>为什么：躲开或者说「没有没有」，夸你的人也会尴尬。</p><p>大声说「谢谢」，还可以回一句「你也很棒」。</p><p>接受夸奖也是一种礼貌。</p>'
+      },
+      5: {
+        main: '<b>蜗牛是世界上牙齿最多的动物——舌头上有一万多颗小牙齿！</b>',
+        extra: '<p>蜗牛用这些小牙像小锉刀一样刮东西吃。</p><p>人的牙齿只有32颗，蜗牛比人多几百倍。</p><p>（蜗牛这条长满牙的舌头叫「齿舌」。）</p>'
+      },
+      6: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：蜗牛有多少颗牙齿？看看他们知不知道~</p>'
+      },
+      0: {
+        main: '<b>今天周末，玩得开心！</b><br>记得读30分钟书，运动10分钟哦~',
+        extra: '<p>考考爸妈：蜗牛有多少颗牙齿？看看他们知不知道~</p>'
+      }
+    }
+  };
+
+  /* 周次表：按起止日期自动切换显示哪一周的内容 */
+  var WEEKS = [
+    { start: '2026-09-07', end: '2026-09-13', yueyue: WEEK_1.yueyue, chengcheng: WEEK_1.chengcheng },
+    { start: '2026-09-14', end: '2026-09-20', yueyue: WEEK_2.yueyue, chengcheng: WEEK_2.chengcheng },
+    { start: '2026-09-21', end: '2026-09-27', yueyue: WEEK_3.yueyue, chengcheng: WEEK_3.chengcheng }
+  ];
+
+  /* 每日英语（固定模块，独立于「今日一句话」）：按周配置，玥玥程程难度不同 */
+  var ENGLISH_WEEK_1 = {
+    yueyue: {
+      1: { word:'need',    phon:'/niːd/',     zh:'需要',   en:'I need a pen.',            cn:'我需要一支笔。' },
+      2: { word:'want',    phon:'/wɒnt/',     zh:'想要',   en:'I want an ice cream.',     cn:'我想要一个冰淇淋。' },
+      3: { word:'save',    phon:'/seɪv/',     zh:'节省',   en:'I save money every week.', cn:'我每周都存钱。' },
+      4: { word:'budget',  phon:'/ˈbʌdʒɪt/',  zh:'预算',   en:'I made a budget.',         cn:'我做了一个预算。' },
+      5: { word:'price',   phon:'/praɪs/',    zh:'价格',   en:'The price is too high.',   cn:'价格太高了。' }
+    },
+    chengcheng: {
+      1: { word:'apple',   phon:'/ˈæpl/',     zh:'苹果',   en:'I eat an apple every day.', cn:'我每天吃一个苹果。' },
+      2: { word:'book',    phon:'/bʊk/',      zh:'书',     en:'This book is interesting.', cn:'这本书很有趣。' },
+      3: { word:'water',   phon:'/ˈwɔːtə/',   zh:'水',     en:'I drink water every day.',  cn:'我每天喝水。' },
+      4: { word:'happy',   phon:'/ˈhæpi/',    zh:'开心的', en:'I am happy today.',        cn:'我今天很开心。' },
+      5: { word:'friend',  phon:'/frend/',    zh:'朋友',   en:'She is my best friend.',   cn:'她是我最好的朋友。' }
+    }
+  };
+  var ENGLISH_WEEKS = [
+    { start: '2026-09-07', end: '2026-09-13', yueyue: ENGLISH_WEEK_1.yueyue, chengcheng: ENGLISH_WEEK_1.chengcheng },
+    { start: '2026-09-14', end: '2026-09-20', yueyue: {}, chengcheng: {} },
+    { start: '2026-09-21', end: '2026-09-27', yueyue: {}, chengcheng: {} }
+  ];
+
+  /* 按今天日期选当周英语内容 */
+  function currentEnglishWeek(){
+    var today = dateStr();
+    var pick = null;
+    for(var i = 0; i < ENGLISH_WEEKS.length; i++){
+      if(today >= ENGLISH_WEEKS[i].start && today <= ENGLISH_WEEKS[i].end){ pick = ENGLISH_WEEKS[i]; break; }
+    }
+    if(!pick){
+      pick = (today < ENGLISH_WEEKS[0].start) ? ENGLISH_WEEKS[0] : ENGLISH_WEEKS[ENGLISH_WEEKS.length - 1];
+    }
+    return pick;
+  }
+
+  /* 按今天日期选当周内容：周期内用当周；早于第一期用第一期，晚于最后一期用最后一期 */
+  function currentWeekData(){
+    var today = dateStr();
+    var pick = null;
+    for(var i = 0; i < WEEKS.length; i++){
+      if(today >= WEEKS[i].start && today <= WEEKS[i].end){ pick = WEEKS[i]; break; }
+    }
+    if(!pick){
+      pick = (today < WEEKS[0].start) ? WEEKS[0] : WEEKS[WEEKS.length - 1];
+    }
+    return pick;
+  }
+
+  /* ============================================================
+   * 数据层：加载 data.json，失败时用默认空数据
+   * ============================================================ */
+  var DEFAULT_DATA = {
+    formLinks: {},
+    messages: [],   // {id, owner:'yueyue'|'chengcheng', text, date, status:'待处理'|'已回复'}
+    weeks: [
+      { week:1, title:'需要vs想要', file:'week-01.html', owner:'both', desc:'财商启蒙，和本周每日英语 need/want 呼应' }
+    ],      // {week:1, title, file:'week-01.html', owner:'both'|'yueyue'|'chengcheng'}
+    videos: [
+      { id:'v20260902', title:'五步教你马伯庸日记法', url:'https://v.douyin.com/imOcqj4sbJE/', date:'2026-09-02', owner:'both', desc:'作家马伯庸的写日记小妙招' }
+    ],      // {id, title, url, date, owner:'both'|'yueyue'|'chengcheng'}
+  };
+  var data = deepCopy(DEFAULT_DATA);
+
+  function deepCopy(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function loadData(callback){
+    var tryFetch = (typeof fetch === 'function');
+    if(!tryFetch){ callback(); return; }
+    fetch('data.json', {cache:'no-cache'})
+      .then(function(res){ return res.ok ? res.json() : null; })
+      .then(function(json){
+        if(json && typeof json === 'object'){
+          if(json.formLinks) data.formLinks = json.formLinks;
+          if(Array.isArray(json.messages)) data.messages = json.messages;
+          if(Array.isArray(json.weeks)) data.weeks = json.weeks;
+          if(Array.isArray(json.videos)) data.videos = json.videos;
+        }
+        callback();
+      })
+      .catch(function(){ callback(); });  // 本地 file:// 打开或无 data.json → 用默认空数据
+  }
+
+  /* ============================================================
+   * 状态层
+   * ============================================================ */
+  var state = { mode: 'all' };   // all | yueyue | chengcheng
+
+  /* 当前模式下，这条数据（owner: yueyue/chengcheng/both）要不要显示 */
+  function matchMode(owner){
+    if(state.mode === 'all') return true;
+    if(owner === 'both') return true;
+    return owner === state.mode;
+  }
+
+  /* ============================================================
+   * 平板身份记忆（localStorage）
+   * ============================================================ */
+  var IDENTITY_KEY = 'learning_house_user';
+  var SAT_CLOSED_PREFIX = 'wb_sat_closed_';
+
+  function getStoredUser(){
+    try { return localStorage.getItem(IDENTITY_KEY); } catch(e){ return null; }
+  }
+  function setStoredUser(u){
+    try { localStorage.setItem(IDENTITY_KEY, u); } catch(e){}
+  }
+  function modeFromUser(u){
+    if(u === 'yueyue') return 'yueyue';
+    if(u === 'chengcheng') return 'chengcheng';
+    return 'all';   // 'together' 或 null/未设置
+  }
+  function isSaturday(){
+    return new Date().getDay() === 6;
+  }
+  function applyTheme(){
+    document.body.setAttribute('data-mode', state.mode);
+  }
+  function setMode(mode){
+    state.mode = mode;
+    setStoredUser(mode === 'all' ? 'together' : mode);
+    applyTheme();
+    refreshAll();   // 统一刷新入口
+  }
+  function showWelcome(){
+    var m = document.getElementById('welcomeMask');
+    if(m) m.hidden = false;
+  }
+  function hideWelcome(){
+    var m = document.getElementById('welcomeMask');
+    if(m) m.hidden = true;
+  }
+
+  /* ============================================================
+   * 渲染层：每个渲染函数只读数据、只写自己的 DOM，互相不调用
+   * ============================================================ */
+
+  /* 顶部日期 + 天气（日期自动获取，天气暂时写死，可接API） */
+  function renderDateWeather(){
+    var el = document.getElementById('dateWeather');
+    if(!el) return;
+    var now = new Date();
+    var weekNames = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    var s = '今天是 ' + now.getFullYear() + '年' + (now.getMonth() + 1) + '月'
+          + now.getDate() + '日 ' + weekNames[now.getDay()]
+          + ' | ' + WEATHER.city + ' ' + WEATHER.text + ' ' + WEATHER.temp;
+    el.textContent = s;
+  }
+
+  /* 底部鼓励语：随机一句 */
+  function renderEncourage(){
+    var el = document.getElementById('encourage');
+    if(!el) return;
+    el.textContent = ENCOURAGES[Math.floor(Math.random() * ENCOURAGES.length)];
+  }
+
+  /* ============================================================
+   * 今日一句话 + 每日打卡（localStorage 按「日期+孩子+项目」存，跨天自动重置）
+   * ============================================================ */
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+  function dateStr(d){
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function lsKeyOn(dateS, kid, kind){
+    return 'wb_daily_' + dateS + '_' + kid + '_' + kind;
+  }
+  function lsKey(kid, kind){ return lsKeyOn(dateStr(), kid, kind); }
+
+  function isDoneOn(kid, kind, dateS){
+    try{ return localStorage.getItem(lsKeyOn(dateS, kid, kind)) === '1'; }
+    catch(e){ return false; }
+  }
+  function isDone(kid, kind){ return isDoneOn(kid, kind, dateStr()); }
+
+  function setDone(kid, kind, val){
+    try{
+      if(val){ localStorage.setItem(lsKey(kid, kind), '1'); }
+      else{ localStorage.removeItem(lsKey(kid, kind)); }
+    }catch(e){ /* 隐私模式等存不了就只改界面 */ }
+  }
+
+  /* 阅读打卡填的书名：按日期+孩子存 localStorage */
+  function lsBookKey(kid){ return 'wb_book_' + dateStr() + '_' + kid; }
+  function getBook(kid){
+    try{ return localStorage.getItem(lsBookKey(kid)) || ''; }catch(e){ return ''; }
+  }
+  function setBook(kid, val){
+    try{
+      if(val){ localStorage.setItem(lsBookKey(kid), val); }
+      else{ localStorage.removeItem(lsBookKey(kid)); }
+    }catch(e){}
+  }
+
+  function visibleKids(){
+    return state.mode === 'all' ? ['yueyue', 'chengcheng'] : [state.mode];
+  }
+
+  function renderTodayDate(){
+    var el = document.getElementById('todayDate');
+    if(!el) return;
+    var now = new Date();
+    var wn = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()];
+  }
+
+  function renderSentences(){
+    var box = document.getElementById('sentenceCards');
+    if(!box) return;
+    box.innerHTML = '';
+    var day = new Date().getDay();
+    var weekData = currentWeekData();
+    // 新轮换：周一生活常识 / 周二歇后语 / 周三情商 / 周四科普 / 周五读书名言；周末显示共学提示
+    var SRC = { 1:2, 2:3, 3:4, 4:5, 5:null, 6:6, 0:0 };
+    var srcDay = SRC[day];
+    visibleKids().forEach(function(kid){
+      var dayData = srcDay ? (weekData[kid] && weekData[kid][srcDay]) : null;
+      var card = document.createElement('div');
+      card.className = 'ts-card';
+      var label = document.createElement('div');
+      label.className = 'ts-label';
+      if(state.mode === 'all'){
+        var chip = document.createElement('span');
+        chip.className = 'kid-chip ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+        chip.textContent = KID_NAMES[kid];
+        label.appendChild(chip);
+      }
+      var lt = document.createElement('span');
+      lt.textContent = '✨ 今日一句话 · ' + (WEEKDAY_LABEL[day] || '');
+      label.appendChild(lt);
+      card.appendChild(label);
+      if(!dayData){
+        var ph = document.createElement('div');
+        ph.className = 'ts-main';
+        ph.style.color = 'var(--ink-soft)';
+        ph.textContent = '今天读一句好书里的话～（爸妈正在准备）';
+        card.appendChild(ph);
+        box.appendChild(card);
+        return;
+      }
+      var main = document.createElement('div');
+      main.className = 'ts-main';
+      main.innerHTML = dayData.main;
+      var extra = document.createElement('div');
+      extra.className = 'ts-extra';
+      extra.hidden = true;
+      extra.innerHTML = dayData.extra;
+      var hint = document.createElement('div');
+      hint.className = 'ts-hint';
+      hint.textContent = '点卡片看更多 ↓';
+      card.appendChild(main);
+      card.appendChild(extra);
+      card.appendChild(hint);
+      box.appendChild(card);
+    });
+  }
+
+  function makeCheck(kid, kind, text){
+    var wrap = document.createElement('div');
+    wrap.className = 'check-item';
+    var label = document.createElement('label');
+    label.className = 'ck-label';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'ck-box';
+    input.setAttribute('data-kid', kid);
+    input.setAttribute('data-kind', kind);
+    var done = isDone(kid, kind);
+    if(done){
+      input.checked = true;
+      wrap.classList.add('done');
+    }
+    var txt = document.createElement('span');
+    txt.textContent = text;
+    label.appendChild(input);
+    label.appendChild(txt);
+    wrap.appendChild(label);
+
+    // 阅读打卡：打勾后出现「今天读了什么书」输入框（可选）
+    if(kind === 'read'){
+      var book = document.createElement('input');
+      book.type = 'text';
+      book.className = 'book-input';
+      book.placeholder = '今天读了什么书？（可选）';
+      book.value = getBook(kid);
+      if(!done) book.hidden = true;
+      book.addEventListener('input', function(){ setBook(kid, book.value); });
+      // 点击输入框不触发 checkbox 切换
+      book.addEventListener('click', function(e){ e.stopPropagation(); });
+      wrap.appendChild(book);
+    }
+    return wrap;
+  }
+
+  function renderChecks(){
+    var box = document.getElementById('checkRow');
+    if(!box) return;
+    box.innerHTML = '';
+    visibleKids().forEach(function(kid){
+      var group = document.createElement('div');
+      group.className = 'check-group';
+      if(state.mode === 'all'){
+        var chip = document.createElement('span');
+        chip.className = 'ck-kid ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+        chip.textContent = KID_NAMES[kid];
+        group.appendChild(chip);
+      }
+      group.appendChild(makeCheck(kid, 'read', '📖 今日阅读 30分钟'));
+      group.appendChild(makeCheck(kid, 'sport', '💪 今日运动 10分钟'));
+      box.appendChild(group);
+    });
+  }
+
+  /* 连续打卡天数：从今天往前数连续完成的天数（今天未打卡则从昨天起算） */
+  function calcStreak(kid, kind){
+    var streak = 0;
+    var d = new Date();
+    if(isDoneOn(kid, kind, dateStr(d))){
+      streak = 1;
+      d.setDate(d.getDate() - 1);
+      while(isDoneOn(kid, kind, dateStr(d))){ streak++; d.setDate(d.getDate() - 1); }
+    }else{
+      d.setDate(d.getDate() - 1);
+      while(isDoneOn(kid, kind, dateStr(d))){ streak++; d.setDate(d.getDate() - 1); }
+    }
+    return streak;
+  }
+  function streakMsg(n){
+    if(n >= 30) return '🎉 太厉害了，养成习惯了！';
+    if(n >= 7)  return '🏆 太棒了，坚持一周了！';
+    if(n >= 3)  return '👍 不错哦，继续坚持！';
+    return '';
+  }
+  function streakBlock(kid, kind){
+    var div = document.createElement('div');
+    div.className = 'streak-line ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+    var label = kind === 'read' ? '阅读' : '运动';
+    var n = calcStreak(kid, kind);
+    if(state.mode === 'all'){
+      var chip = document.createElement('span');
+      chip.className = 'kid-chip ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+      chip.textContent = KID_NAMES[kid];
+      div.appendChild(chip);
+    }
+    var t = document.createElement('span');
+    t.className = 'streak-text';
+    t.innerHTML = '你已经连续' + label + ' <b>' + n + '</b> 天啦！' + (streakMsg(n) ? ' ' + streakMsg(n) : '');
+    div.appendChild(t);
+    return div;
+  }
+  /* 连续打卡提示：位于打卡区上方，按当前模式显示对应孩子 */
+  function renderStreaks(){
+    var area = document.getElementById('streakArea');
+    if(!area) return;
+    area.innerHTML = '';
+    visibleKids().forEach(function(kid){
+      area.appendChild(streakBlock(kid, 'read'));
+      area.appendChild(streakBlock(kid, 'sport'));
+    });
+  }
+
+  /* 浏览器语音合成（speechSynthesis），无需外部库；优先英语女声，语速 0.9 */
+  function pickFemaleVoice(){
+    if(!('speechSynthesis' in window)) return null;
+    var vs = window.speechSynthesis.getVoices() || [];
+    for(var i = 0; i < vs.length; i++){
+      var n = (vs[i].name || '').toLowerCase();
+      if(vs[i].lang && vs[i].lang.indexOf('en') === 0){
+        if(/zira|samantha|female|woman|google us|aria|jenny/.test(n)) return vs[i];
+      }
+    }
+    for(var j = 0; j < vs.length; j++){
+      if(vs[j].lang === 'en-US') return vs[j];
+    }
+    return null;
+  }
+  function speakText(text){
+    if(!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.9;
+    var v = pickFemaleVoice(); if(v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  }
+  function speakWordSentence(word, sentence){
+    if(!('speechSynthesis' in window)) return;
+    try { window.speechSynthesis.cancel(); } catch(e){}
+    var u1 = new SpeechSynthesisUtterance(word);
+    u1.lang = 'en-US'; u1.rate = 0.9;
+    var v1 = pickFemaleVoice(); if(v1) u1.voice = v1;
+    u1.onend = function(){
+      setTimeout(function(){
+        var u2 = new SpeechSynthesisUtterance(sentence);
+        u2.lang = 'en-US'; u2.rate = 0.9;
+        var v2 = pickFemaleVoice(); if(v2) u2.voice = v2;
+        try { window.speechSynthesis.speak(u2); } catch(e){}
+      }, 500);
+    };
+    try { window.speechSynthesis.speak(u1); } catch(e){}
+  }
+
+  /* 每日英语固定卡片：上方显示，按模式显示对应孩子单词；周末隐藏 */
+  function renderEnglish(){
+    var card = document.getElementById('englishCard');
+    var body = document.getElementById('englishBody');
+    if(!card || !body) return;
+    var day = new Date().getDay();
+    if(day === 0 || day === 6){ card.hidden = true; return; }
+    card.hidden = false;
+    body.innerHTML = '';
+    var week = currentEnglishWeek();
+    visibleKids().forEach(function(kid){
+      var d = week[kid] && week[kid][day];
+      var block = document.createElement('div');
+      block.className = 'eng-block ' + (kid === 'yueyue' ? 'kid-yue' : 'kid-cheng');
+      if(state.mode === 'all'){
+        var chipLine = document.createElement('div');
+        var chip = document.createElement('span');
+        chip.className = 'kid-chip ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+        chip.textContent = KID_NAMES[kid];
+        chipLine.appendChild(chip);
+        block.appendChild(chipLine);
+      }
+      if(!d){
+        var ph = document.createElement('div');
+        ph.className = 'eng-zh';
+        ph.style.color = 'var(--ink-soft)';
+        ph.textContent = '本周英语单词整理中～';
+        block.appendChild(ph);
+        body.appendChild(block);
+        return;
+      }
+      var wl = document.createElement('div');
+      wl.className = 'eng-word-line';
+      var w = document.createElement('span');
+      w.className = 'eng-word'; w.textContent = d.word;
+      var p = document.createElement('span');
+      p.className = 'eng-phon'; p.textContent = d.phon;
+      var sp = document.createElement('button');
+      sp.type = 'button'; sp.className = 'speak-btn'; sp.textContent = '🔊';
+      sp.setAttribute('data-word', d.word);
+      sp.setAttribute('data-sentence', d.en);
+      sp.setAttribute('aria-label', '朗读');
+      wl.appendChild(w); wl.appendChild(p); wl.appendChild(sp);
+      var zh = document.createElement('div');
+      zh.className = 'eng-zh'; zh.textContent = d.zh;
+      var s = document.createElement('div');
+      s.className = 'eng-sentence';
+      var enSpan = document.createElement('span'); enSpan.textContent = d.en;
+      var cnSpan = document.createElement('span'); cnSpan.className = 'cn'; cnSpan.textContent = ' ' + d.cn;
+      s.appendChild(enSpan); s.appendChild(cnSpan);
+      block.appendChild(wl); block.appendChild(zh); block.appendChild(s);
+      body.appendChild(block);
+    });
+  }
+
+  /* 今日区域统一渲染（日期 + 句子 + 打卡），由 refreshAll 或跨天定时器调用 */
+  function renderTodaySection(){
+    renderTodayDate();
+    renderSentences();
+    renderChecks();
+  }
+
+  function renderModeButtons(){
+    var btns = document.querySelectorAll('#modeSwitch button');
+    for(var i = 0; i < btns.length; i++){
+      if(btns[i].getAttribute('data-mode') === state.mode){
+        btns[i].classList.add('active');
+      }else{
+        btns[i].classList.remove('active');
+      }
+    }
+  }
+
+  function renderTodo(){
+    var list = document.getElementById('todoList');
+    var empty = document.getElementById('todoEmpty');
+    var cardEl = document.getElementById('todoCard');
+    var pending = data.messages.filter(function(m){
+      return m.status === '待处理' && matchMode(m.owner);
+    });
+    list.innerHTML = '';
+    if(pending.length === 0){
+      empty.hidden = false;
+      if(cardEl) cardEl.classList.remove('todo-highlight');
+      return;
+    }
+    // 有待处理留言：橙色边框 + 浅橙色背景高亮
+    empty.hidden = true;
+    if(cardEl) cardEl.classList.add('todo-highlight');
+    pending.forEach(function(m){
+      var item = document.createElement('div');
+      item.className = 'todo-item';
+      var badge = document.createElement('span');
+      badge.className = 'todo-badge ' + (m.owner === 'yueyue' ? 'yue' : 'cheng');
+      badge.textContent = m.owner === 'yueyue' ? '玥玥' : '程程';
+      var txt = document.createElement('div');
+      txt.className = 'txt';
+      var p1 = document.createElement('div');
+      p1.textContent = m.text || '';
+      var p2 = document.createElement('div');
+      p2.className = 'meta';
+      p2.textContent = (m.date || '') + (m.subject ? ' · ' + m.subject : '');
+      txt.appendChild(p1);
+      txt.appendChild(p2);
+      // 家长回复：有 reply 字段才显示，灰色小字
+      if(m.reply){
+        var rp = document.createElement('div');
+        rp.className = 'reply-line';
+        rp.textContent = '💬 爸妈回复：' + m.reply;
+        txt.appendChild(rp);
+      }
+      item.appendChild(badge);
+      item.appendChild(txt);
+      list.appendChild(item);
+    });
+  }
+
+  /* 解析某孩子的某个入口链接：data.json 的 formLinks[kid][key] 优先，否则用页面内置链接 */
+  function resolveLink(kid, key){
+    var fl = data.formLinks || {};
+    if(fl[kid] && fl[kid][key]) return fl[kid][key];
+    return FORM_LINKS[kid][key];
+  }
+
+  /* 生成单个入口按钮（a.entry-card，新窗口打开） */
+  function makeEntryCard(kid, meta){
+    var a = document.createElement('a');
+    a.className = 'entry-card ' + (kid === 'yueyue' ? 'kid-yue' : 'kid-cheng');
+    a.href = resolveLink(kid, meta.key);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.setAttribute('data-kid', kid);
+    a.setAttribute('data-key', meta.key);
+    var ic = document.createElement('span');
+    ic.className = 'icon';
+    ic.textContent = meta.icon;
+    var nm = document.createElement('span');
+    nm.className = 'name';
+    nm.textContent = meta.name;
+    var ds = document.createElement('span');
+    ds.className = 'desc';
+    ds.textContent = meta.desc;
+    a.appendChild(ic);
+    a.appendChild(nm);
+    a.appendChild(ds);
+    return a;
+  }
+
+  /* 四大入口区：按当前模式渲染 —— 单孩 4 个，一起看 8 个分两列 */
+  function renderFormLinks(){
+    var area = document.getElementById('entryArea');
+    if(!area) return;
+    area.innerHTML = '';
+    if(state.mode === 'all'){
+      var cols = document.createElement('div');
+      cols.className = 'entry-cols';
+      ['yueyue','chengcheng'].forEach(function(kid){
+        var col = document.createElement('div');
+        col.className = 'entry-col';
+        var title = document.createElement('div');
+        title.className = 'entry-col-title ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+        title.textContent = (kid === 'yueyue' ? '👧 玥玥的' : '👦 程程的');
+        col.appendChild(title);
+        ENTRY_META.forEach(function(m){ col.appendChild(makeEntryCard(kid, m)); });
+        cols.appendChild(col);
+      });
+      area.appendChild(cols);
+    }else{
+      var grid = document.createElement('div');
+      grid.className = 'entry-grid';
+      ENTRY_META.forEach(function(m){ grid.appendChild(makeEntryCard(state.mode, m)); });
+      area.appendChild(grid);
+    }
+  }
+
+  function renderWeeks(){
+    var currentBox = document.getElementById('currentWeek');
+    var historyBox = document.getElementById('weekHistory');
+    currentBox.innerHTML = '';
+    historyBox.innerHTML = '';
+
+    var weeks = data.weeks.slice().sort(function(a, b){ return (b.week || 0) - (a.week || 0); });
+
+    // 本周共学：取周数最大、且在当前模式下可见的一条
+    var current = null;
+    for(var i = 0; i < weeks.length; i++){
+      if(matchMode(weeks[i].owner || 'both')){ current = weeks[i]; break; }
+    }
+
+    if(current){
+      var a = document.createElement('a');
+      a.className = 'week-current';
+      a.href = current.file || 'week-01.html';
+      var book = document.createElement('span');
+      book.className = 'book';
+      book.textContent = '📖';
+      var mid = document.createElement('div');
+      var t = document.createElement('div');
+      t.className = 'wt';
+      t.textContent = '第' + (current.week || 1) + '周：' + (current.title || '');
+      var d = document.createElement('div');
+      d.className = 'wd';
+      d.textContent = current.desc || '点开看看这周一起学什么';
+      mid.appendChild(t);
+      mid.appendChild(d);
+      var arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '→';
+      a.appendChild(book);
+      a.appendChild(mid);
+      a.appendChild(arrow);
+      currentBox.appendChild(a);
+    }else{
+      var e = document.createElement('div');
+      e.className = 'card';
+      var ep = document.createElement('div');
+      ep.className = 'empty';
+      ep.textContent = '爸妈正在准备本周内容，周六就有啦~';
+      e.appendChild(ep);
+      currentBox.appendChild(e);
+    }
+
+    // 历史周次：列出所有周（含本周），倒序（周数大的在前）
+    var history = weeks.slice();
+    if(history.length === 0){
+      var he = document.createElement('div');
+      he.className = 'empty';
+      he.textContent = '以后这里会有我们一起学过的所有内容~';
+      historyBox.appendChild(he);
+      return;
+    }
+    history.forEach(function(w){
+      if(!matchMode(w.owner || 'both')) return;
+      var card = document.createElement('a');
+      card.className = 'week-mini';
+      card.href = w.file || ('week-' + pad(w.week) + '.html');
+      var num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = '第' + (w.week || 0) + '周';
+      var t2 = document.createElement('span');
+      t2.className = 't';
+      t2.textContent = w.title || '';
+      var go = document.createElement('span');
+      go.className = 'go';
+      go.textContent = '→';
+      card.appendChild(num);
+      card.appendChild(t2);
+      card.appendChild(go);
+      historyBox.appendChild(card);
+    });
+    // 过滤后可能一条都不剩
+    if(historyBox.children.length === 0){
+      var he2 = document.createElement('div');
+      he2.className = 'empty';
+      he2.textContent = '以后这里会有我们一起学过的所有内容~';
+      historyBox.appendChild(he2);
+    }
+  }
+
+  function pad(n){
+    n = parseInt(n, 10) || 1;
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function renderVideos(){
+    var box = document.getElementById('videoList');
+    box.innerHTML = '';
+    // 最近 5 条，倒序（新的在前）
+    var videos = data.videos.slice(-5).reverse().filter(function(v){
+      return matchMode(v.owner || 'both');
+    });
+    if(videos.length === 0){
+      var e = document.createElement('div');
+      e.className = 'empty';
+      e.textContent = '爸妈看到好视频会分享到这里~';
+      box.appendChild(e);
+      return;
+    }
+    videos.forEach(function(v){
+      var a = document.createElement('a');
+      a.className = 'video-btn';
+      a.href = v.url || '#';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      var play = document.createElement('span');
+      play.className = 'play';
+      play.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      var mid = document.createElement('div');
+      var t = document.createElement('div');
+      t.className = 'vt';
+      t.textContent = v.title || '视频分享';
+      var d = document.createElement('div');
+      d.className = 'vd';
+      d.textContent = (v.date ? v.date + ' · ' : '') + (v.desc || '点击观看');
+      mid.appendChild(t);
+      mid.appendChild(d);
+      a.appendChild(play);
+      a.appendChild(mid);
+      box.appendChild(a);
+    });
+  }
+
+  /* ============================================================
+   * 统一刷新入口：所有联动刷新都走这里，渲染函数之间禁止互调
+   * ============================================================ */
+  function refreshAll(){
+    renderModeButtons();
+    renderSaturdayHint();
+    renderEnglish();
+    renderTodaySection();
+    renderStreaks();
+    renderTodo();
+    renderFormLinks();
+    renderWeeks();
+    renderVideos();
+  }
+
+  /* 周六共读提示：周六且非「一起看」模式显示，当天关闭后不再显示 */
+  function renderSaturdayHint(){
+    var box = document.getElementById('saturdayHint');
+    if(!box) return;
+    if(!isSaturday() || state.mode === 'all'){ box.hidden = true; return; }
+    var closed = false;
+    try { closed = localStorage.getItem(SAT_CLOSED_PREFIX + dateStr()) === '1'; } catch(e){}
+    if(closed){ box.hidden = true; return; }
+    var txt = document.getElementById('shText');
+    if(txt) txt.textContent = '今天是周六~ 要不要切换到【一起看】模式，和家人一起共学呀？';
+    box.hidden = false;
+  }
+
+  /* ============================================================
+   * 事件层
+   * ============================================================ */
+  function bindEvents(){
+    var switcher = document.getElementById('modeSwitch');
+    switcher.addEventListener('click', function(ev){
+      var btn = ev.target.closest ? ev.target.closest('button') : null;
+      if(!btn || !switcher.contains(btn)) return;
+      var mode = btn.getAttribute('data-mode');
+      if(!mode || mode === state.mode) return;
+      setMode(mode);   // 切换 + 记忆
+    });
+
+    // 首次打开：身份选择按钮
+    document.querySelectorAll('.welcome-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var u = btn.getAttribute('data-user');
+        if(u !== 'yueyue' && u !== 'chengcheng') return;
+        setStoredUser(u);
+        state.mode = u;
+        applyTheme();
+        hideWelcome();
+        refreshAll();
+      });
+    });
+
+    // 周六提示：切换到共读 / 关闭
+    var shGo = document.getElementById('shGo');
+    if(shGo) shGo.addEventListener('click', function(){ setMode('all'); });
+    var shClose = document.getElementById('shClose');
+    if(shClose) shClose.addEventListener('click', function(){
+      try { localStorage.setItem(SAT_CLOSED_PREFIX + dateStr(), '1'); } catch(e){}
+      var box = document.getElementById('saturdayHint');
+      if(box) box.hidden = true;
+    });
+
+    // 家长重置身份：清掉身份标记，刷新重新选
+    var resetBtn = document.getElementById('resetIdentity');
+    if(resetBtn) resetBtn.addEventListener('click', function(){
+      try {
+        localStorage.removeItem(IDENTITY_KEY);
+        localStorage.removeItem(SAT_CLOSED_PREFIX + dateStr());
+      } catch(e){}
+      location.reload();
+    });
+
+    // 今日一句话卡片：点击展开/收起补充内容
+    document.getElementById('sentenceCards').addEventListener('click', function(ev){
+      var card = ev.target.closest ? ev.target.closest('.ts-card') : null;
+      if(!card) return;
+      var extra = card.querySelector('.ts-extra');
+      if(extra) extra.hidden = !extra.hidden;
+    });
+
+    // 每日英语：点击🔊朗读单词+短句（事件委托，按钮随渲染重建也生效）
+    var englishBody = document.getElementById('englishBody');
+    if(englishBody) englishBody.addEventListener('click', function(ev){
+      var btn = ev.target.closest ? ev.target.closest('.speak-btn') : null;
+      if(!btn) return;
+      var word = btn.getAttribute('data-word');
+      var sentence = btn.getAttribute('data-sentence');
+      if(word && sentence) speakWordSentence(word, sentence);
+    });
+
+    // 打卡 checkbox：打勾变绿 + 存 localStorage（按日期存，跨天自动重置）
+    document.getElementById('checkRow').addEventListener('change', function(ev){
+      var input = ev.target;
+      if(input.tagName !== 'INPUT') return;
+      var kid = input.getAttribute('data-kid');
+      var kind = input.getAttribute('data-kind');
+      setDone(kid, kind, input.checked);
+      var item = input.closest('.check-item');
+      if(item) item.classList.toggle('done', input.checked);
+      // 阅读打卡：打勾才显示书名输入框
+      if(kind === 'read'){
+        var book = item ? item.querySelector('.book-input') : null;
+        if(book) book.hidden = !input.checked;
+      }
+      renderStreaks();   // 连续天数随打卡实时更新
+    });
+  }
+
+  /* ============================================================
+   * 初始化：加载数据 → 绑定事件 → 统一渲染
+   * ============================================================ */
+  function init(){
+    bindEvents();
+    applyTheme();
+    renderDateWeather();
+    renderEncourage();
+    var stored = getStoredUser();
+    state.mode = modeFromUser(stored);
+    applyTheme();
+    loadData(function(){
+      refreshAll();
+      if(!stored){ showWelcome(); }   // 第一次打开 → 弹身份选择
+    });
+    // 跨天自动重置：每半分钟检查一次日期，0点过后自动刷新今日区域与周六提示
+    var lastDate = dateStr();
+    setInterval(function(){
+      if(dateStr() !== lastDate){
+        lastDate = dateStr();
+        renderTodaySection();
+        renderSaturdayHint();
+      }
+    }, 30000);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+</body>
+</html>

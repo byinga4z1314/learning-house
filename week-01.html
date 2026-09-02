@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>第1周共学 · 需要vs想要</title>
+<style>
+  :root{
+    --page:#fdf6ea; --card:#ffffff; --ink:#4a3b32; --ink-soft:#9c8b7d;
+    --line:#f0e3ce; --accent:#ff8a4c; --accent-deep:#f2702e; --gold:#ffc94d;
+    --yue:#ff8a7a; --yue-bg:#eaf2ff; --yue-line:#bcd6ff;
+    --cheng:#67b86a; --cheng-bg:#e9f7ec; --cheng-line:#bfe6c4;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;padding:0 16px calc(48px + env(safe-area-inset-bottom));
+    background:var(--page);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;
+    font-size:18px;line-height:1.8;-webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:700px;margin:0 auto;}
+  header{text-align:center;padding:30px 8px 14px;}
+  header h1{font-size:28px;margin:0 0 4px;letter-spacing:1px;}
+  header .sub{color:var(--ink-soft);font-size:17px;margin:0;}
+  header .tip{display:inline-block;margin-top:12px;padding:5px 16px;border-radius:999px;
+    background:var(--gold);color:#7a5a00;font-size:15px;font-weight:700;}
+  .card{
+    background:var(--card);border-radius:20px;padding:18px 20px;margin-bottom:22px;
+    box-shadow:0 3px 12px rgba(120,90,40,.07);border:1px solid var(--line);
+  }
+  .card h2{font-size:21px;font-weight:700;margin:0 0 12px;
+    display:flex;align-items:center;gap:8px;}
+  .card p{margin:0 0 10px;}
+  .card p:last-child{margin-bottom:0;}
+  .story{background:linear-gradient(135deg,#fff7ec,#fdeede);}
+  /* 讨论题分色块：玥玥蓝、程程绿 */
+  .q-block{border-radius:16px;padding:14px 16px;margin-top:4px;}
+  .q-block.yue{background:var(--yue-bg);border:1px solid var(--yue-line);}
+  .q-block.cheng{background:var(--cheng-bg);border:1px solid var(--cheng-line);}
+  .q-block .q-title{font-size:18px;font-weight:700;margin:0 0 10px;}
+  .q-block.yue .q-title{color:#2f6fd0;}
+  .q-block.cheng .q-title{color:#2f8a3a;}
+  .q-block ol{margin:0;padding-left:22px;}
+  .q-block li{margin-bottom:8px;}
+  .q-block li:last-child{margin-bottom:0;}
+  /* 英语小卡 */
+  .eng-box{background:#eef6ff;border-radius:14px;padding:12px 14px;}
+  .eng-box .word{font-size:22px;font-weight:700;}
+  .eng-box .phon{color:var(--ink-soft);font-size:15px;margin-left:6px;}
+  .eng-box .line{margin:6px 0 0;}
+  /* 视频大按钮 */
+  .video-list{display:flex;flex-direction:column;gap:12px;}
+  .video-btn{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border-radius:16px;border:1px solid var(--line);
+    box-shadow:0 3px 12px rgba(120,90,40,.07);
+    padding:16px 18px;text-decoration:none;color:var(--ink);
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .video-btn:hover{transform:scale(1.02);background:#fbf4e8;}
+  .video-btn:active{transform:scale(.98);}
+  .video-btn .play{
+    flex-shrink:0;width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--gold));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-btn .play svg{width:22px;height:22px;fill:#fff;margin-left:3px;}
+  .video-btn .vt{font-size:18px;font-weight:700;line-height:1.5;}
+  .video-btn .vd{font-size:15px;color:var(--ink-soft);}
+  /* 朗读按钮 */
+  .speak-btn{
+    margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+    background:var(--accent);color:#fff;border:0;border-radius:999px;
+    padding:8px 14px;font-size:15px;font-weight:700;cursor:pointer;
+    transition:transform .2s ease, background-color .2s ease;
+  }
+  .speak-btn:hover{transform:scale(1.05);background:var(--accent-deep);}
+  .speak-btn:active{transform:scale(.95);}
+  .speak-btn svg{width:18px;height:18px;fill:currentColor;}
+  footer{text-align:center;margin-top:30px;padding-top:20px;
+    border-top:1px solid var(--line);color:var(--ink-soft);font-size:16px;line-height:1.8;}
+  footer a{color:var(--accent-deep);text-decoration:none;font-weight:700;}
+  @media (max-width:480px){ header h1{font-size:24px;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>第1周共学 · 需要 vs 想要</h1>
+    <p class="sub">财商启蒙 ｜ 和本周每日英语 need / want 呼应</p>
+    <span class="tip">建议总时长 ≤ 40 分钟</span>
+  </header>
+
+  <!-- 1. 共学小故事 -->
+  <section class="card story">
+    <h2>📖 共学小故事</h2>
+    <p>周六上午，妈妈带玥玥和程程去超市。程程一眼看中货架上的变形金刚："我要这个！"玥玥也举着一本亮闪闪的贴纸书："这个好好看，买给我嘛～"</p>
+    <p>妈妈蹲下来，拿出一张小纸条："我们来玩个游戏。先想想——<b>没有它，今天会不会很难过？</b>"</p>
+    <p>程程的变形金刚：没有也能玩原来的积木，是"想要"。玥玥的贴纸书：没有也能写作业，是"想要"。那"需要"是什么呢？程程中午要喝水、晚上要睡觉，这是需要；玥玥明天上学要铅笔，这也是需要。</p>
+    <p>最后，妈妈让他们每人先选一样"需要"买（程程买了袜子，玥玥买了铅笔），而"想要"的两样写进"愿望清单"，用这周的零花钱慢慢攒。</p>
+  </section>
+
+  <!-- 2. 核心概念 -->
+  <section class="card">
+    <h2>💡 核心概念</h2>
+    <p><b>需要（need）</b>：没有它，生活或学习就过不下去。比如水、饭、衣服、上学用的文具。</p>
+    <p><b>想要（want）</b>：有了会更开心，但没有也能过。比如玩具、零食、漂亮但不必需的小物件。</p>
+    <p><b>一句话区分</b>：问自己"没有它，今天会很难过或者没法过吗？"——会，就是需要；不会，就是想要。</p>
+    <p>小提醒：广告常常让我们误以为"我需要"，其实很多时候只是"想要"。</p>
+  </section>
+
+  <!-- 3. 玥玥讨论题（蓝色块） -->
+  <section class="card">
+    <h2>🧒 玥玥的讨论题（六年级）</h2>
+    <div class="q-block yue">
+      <p class="q-title">一起来聊聊（2–3题）</p>
+      <ol>
+        <li>如果这周零花钱只能买一样东西，你会先买"需要"还是"想要"？为什么？</li>
+        <li>广告总让我们觉得"我需要这个"。举一个你差点被广告说动想买的东西，后来怎么想明白它只是"想要"的？</li>
+        <li>"想要"的东西可以先"等一等"再买。这样做有什么好处？（提示：攒钱、比价、不冲动）</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 4. 程程讨论题（绿色块） -->
+  <section class="card">
+    <h2>👦 程程的讨论题（五年级）</h2>
+    <div class="q-block cheng">
+      <p class="q-title">一起来聊聊（2–3题）</p>
+      <ol>
+        <li>下面哪个是"需要"，哪个是"想要"？圈一圈：喝水 ☑ ／ 新玩具 □ ／ 写作业用的笔 ☑ ／ 薯片 □</li>
+        <li>你最想要的一个玩具是什么？如果现在不买，用存钱罐攒两周再买，会不会更开心、更珍惜？</li>
+        <li>和哥哥姐姐去超市，怎么才能"只买清单上的东西"，不被促销小玩具勾走？</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 5. 本周小实践 -->
+  <section class="card">
+    <h2>🛒 本周小实践</h2>
+    <p><b>全家一起（1个）</b>：周六列一张"本周购物清单"，分成两列「需要」「想要」。去超市只买「需要」列，想要的先写进"愿望清单"。</p>
+    <p><b>玥玥自己（1个）</b>：这一周记下 1 件"我想要但忍住没买"的事，周末说说省下了什么。</p>
+    <p><b>程程自己（1个）</b>：把本周零花钱里的 5 元放进存钱罐，贴上"想要基金"标签，攒够就能买心愿。</p>
+  </section>
+
+  <!-- 6. 5分钟趣味英语 -->
+  <section class="card">
+    <h2>🔤 5分钟趣味英语（need / want）<button class="speak-btn" id="speakEng" type="button"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> 朗读</button></h2>
+    <div class="eng-box">
+      <div><span class="word">need</span><span class="phon">/niːd/ 需要</span>　　<span class="word">want</span><span class="phon">/wɒnt/ 想要</span></div>
+      <p class="line">I need water. 我需要水。</p>
+      <p class="line">I want a toy. 我想要一个玩具。</p>
+    </div>
+    <p style="margin-top:10px;">小游戏：妈妈说一个词，你举"需要"或"想要"的牌子，看谁举得又快又准！</p>
+  </section>
+
+  <!-- 7. 配套视频 -->
+  <section class="card">
+    <h2>🎬 配套视频（B站 · 儿童财商启蒙）</h2>
+    <div class="video-list">
+      <a class="video-btn" href="https://bilibili.com/bangumi/play/ep799483" target="_blank" rel="noopener">
+        <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+        <span>
+          <span class="vt">《瑞克和扣扣财商启蒙 第一季》</span><br>
+          <span class="vd">单集约 6 分钟，请挑"需要 vs 想要"相关集</span>
+        </span>
+      </a>
+      <a class="video-btn" href="https://bilibili.com/bangumi/play/ep821377" target="_blank" rel="noopener">
+        <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+        <span>
+          <span class="vt">《财宝小狐狸》</span><br>
+          <span class="vd">单集约 8 分钟，建议选财商相关一集</span>
+        </span>
+      </a>
+    </div>
+    <p style="margin-top:10px;color:var(--ink-soft);font-size:15px;">说明：视频总时长控制在 10 分钟以内，具体单集请家长帮孩子挑"需要 vs 想要"相关的一集。</p>
+  </section>
+
+  <footer>
+    看完后，和爸妈聊聊你的想法吧～<br>
+    <a href="index.html">← 返回学习小屋</a>
+  </footer>
+
+</div>
+<script>
+(function(){
+  var btn = document.getElementById('speakEng');
+  if(!btn) return;
+  var text = 'need. want. I need water. I want a toy.';
+  btn.addEventListener('click', function(){
+    if(!window.speechSynthesis){ alert('你的浏览器不支持朗读功能'); return; }
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    var voices = window.speechSynthesis.getVoices();
+    var en = voices.filter(function(v){ return v.lang.indexOf('en') === 0; });
+    var female = en.find(function(v){ return /female|samantha/i.test(v.name); });
+    if(female) u.voice = female;
+    else if(en.length) u.voice = en[0];
+    window.speechSynthesis.speak(u);
+  });
+})();
+</script>
+</body>
+</html>
