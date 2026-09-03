@@ -7,12 +7,72 @@
     "mistakes": "错题本。数组：{ id:'e1', owner:'yueyue'|'chengcheng', subject:'数学', point:'分数加减', reason:'通分错误', date:'2026-09-07' }。",
     "homework": "学校作业。数组：{ id:'h1', owner:'chengcheng', subject:'语文', topic:'手抄报', status:'已完成', date:'2026-09-07' }。status 即完成情况。",
     "inspirations": "灵感记录。数组：{ id:'i1', owner:'yueyue', topic:'为什么要保护环境', idea:'可以写垃圾分类的好处', type:'思考' }。type 为类型标签。",
-    "health_records": "健康记录。数组：{ owner:'yueyue'|'chengcheng', year:2026, month:9, recorded:true }。recorded=true 表示当月已记录，false 或未填表示未记录（家长端会红色提醒）。"
+    "health_records": "健康记录。数组：{ owner:'yueyue'|'chengcheng', year:2026, month:9, recorded:true }。recorded=true 表示当月已记录，false 或未填表示未记录（家长端会红色提醒）。",
+    "english": "每日英语素材库。数组，每周一条：{ week:1, start:'2026-09-07', end:'2026-09-13', yueyue:{...}, chengcheng:{...} }。每天字段 1-5 对应周一到周五；type 可选 word/phrase/sentence，text 即要朗读的内容，en/cn 为例句和翻译（sentence 可省略例句）。"
   },
   "weekly_checkin": [],
   "messages": [],
   "mistakes": [],
   "homework": [],
   "inspirations": [],
-  "health_records": []
+  "health_records": [],
+  "english": [
+    {
+      "week": 1,
+      "start": "2026-09-07",
+      "end": "2026-09-13",
+      "yueyue": {
+        "1": { "type": "word", "word": "need", "phon": "/niːd/", "zh": "需要", "en": "I need a pen.", "cn": "我需要一支笔。" },
+        "2": { "type": "phrase", "word": "save money", "phon": "/seɪv ˈmʌni/", "zh": "存钱", "en": "I save money every week.", "cn": "我每周都存钱。" },
+        "3": { "type": "word", "word": "want", "phon": "/wɒnt/", "zh": "想要", "en": "I want an ice cream.", "cn": "我想要一个冰淇淋。" },
+        "4": { "type": "sentence", "word": "I made a budget for my pocket money.", "phon": "", "zh": "我为零花钱做了预算。", "en": "", "cn": "" },
+        "5": { "type": "phrase", "word": "the price is high", "phon": "/ðə praɪs ɪz haɪ/", "zh": "价格很高", "en": "The price is too high.", "cn": "价格太高了。" }
+      },
+      "chengcheng": {
+        "1": { "type": "word", "word": "apple", "phon": "/ˈæpl/", "zh": "苹果", "en": "I eat an apple every day.", "cn": "我每天吃一个苹果。" },
+        "2": { "type": "phrase", "word": "my book", "phon": "/maɪ bʊk/", "zh": "我的书", "en": "This is my book.", "cn": "这是我的书。" },
+        "3": { "type": "sentence", "word": "I drink water every day.", "phon": "", "zh": "我每天喝水。", "en": "", "cn": "" },
+        "4": { "type": "phrase", "word": "my friend", "phon": "/maɪ frend/", "zh": "我的朋友", "en": "She is my best friend.", "cn": "她是我最好的朋友。" },
+        "5": { "type": "word", "word": "happy", "phon": "/ˈhæpi/", "zh": "开心的", "en": "I am happy today.", "cn": "我今天很开心。" }
+      }
+    },
+    {
+      "week": 2,
+      "start": "2026-09-14",
+      "end": "2026-09-20",
+      "yueyue": {
+        "1": { "type": "word", "word": "subject", "phon": "/ˈsʌbdʒɪkt/", "zh": "学科", "en": "My favorite subject is English.", "cn": "我最喜欢的学科是英语。" },
+        "2": { "type": "phrase", "word": "take notes", "phon": "/teɪk noʊts/", "zh": "做笔记", "en": "I take notes in class.", "cn": "我在课堂上做笔记。" },
+        "3": { "type": "word", "word": "homework", "phon": "/ˈhoʊmwɜːrk/", "zh": "家庭作业", "en": "I finish my homework on time.", "cn": "我准时完成作业。" },
+        "4": { "type": "sentence", "word": "The library is a quiet place to read.", "phon": "", "zh": "图书馆是安静阅读的地方。", "en": "", "cn": "" },
+        "5": { "type": "phrase", "word": "ask questions", "phon": "/ɑːsk ˈkwestʃənz/", "zh": "提问", "en": "Don't be afraid to ask questions.", "cn": "不要害怕提问。" }
+      },
+      "chengcheng": {
+        "1": { "type": "word", "word": "classroom", "phon": "/ˈklæsruːm/", "zh": "教室", "en": "Our classroom is clean.", "cn": "我们的教室很干净。" },
+        "2": { "type": "phrase", "word": "a red pen", "phon": "/ə red pen/", "zh": "一支红笔", "en": "I have a red pen.", "cn": "我有一支红笔。" },
+        "3": { "type": "sentence", "word": "I like my school bag.", "phon": "", "zh": "我喜欢我的书包。", "en": "", "cn": "" },
+        "4": { "type": "phrase", "word": "play games", "phon": "/pleɪ ɡeɪmz/", "zh": "玩游戏", "en": "We play games after class.", "cn": "我们课后玩游戏。" },
+        "5": { "type": "word", "word": "teacher", "phon": "/ˈtiːtʃər/", "zh": "老师", "en": "My teacher is kind.", "cn": "我的老师很和蔼。" }
+      }
+    },
+    {
+      "week": 3,
+      "start": "2026-09-21",
+      "end": "2026-09-27",
+      "yueyue": {
+        "1": { "type": "word", "word": "family", "phon": "/ˈfæməli/", "zh": "家庭", "en": "I love my family.", "cn": "我爱我的家庭。" },
+        "2": { "type": "phrase", "word": "help others", "phon": "/help ˈʌðərz/", "zh": "帮助别人", "en": "I help others at home.", "cn": "我在家帮助别人。" },
+        "3": { "type": "word", "word": "share", "phon": "/ʃeər/", "zh": "分享", "en": "I share toys with my brother.", "cn": "我和弟弟分享玩具。" },
+        "4": { "type": "sentence", "word": "We eat dinner together every day.", "phon": "", "zh": "我们每天一起吃晚餐。", "en": "", "cn": "" },
+        "5": { "type": "phrase", "word": "clean the room", "phon": "/kliːn ðə ruːm/", "zh": "打扫房间", "en": "I clean my room on weekends.", "cn": "我周末打扫房间。" }
+      },
+      "chengcheng": {
+        "1": { "type": "word", "word": "father", "phon": "/ˈfɑːðər/", "zh": "父亲", "en": "My father is tall.", "cn": "我的爸爸很高。" },
+        "2": { "type": "phrase", "word": "my mother", "phon": "/maɪ ˈmʌðər/", "zh": "我的妈妈", "en": "My mother cooks well.", "cn": "我的妈妈做饭很好吃。" },
+        "3": { "type": "sentence", "word": "I have a happy family.", "phon": "", "zh": "我有一个幸福的家庭。", "en": "", "cn": "" },
+        "4": { "type": "phrase", "word": "read together", "phon": "/riːd təˈɡeðər/", "zh": "一起读书", "en": "We read together before bed.", "cn": "我们睡前一起读书。" },
+        "5": { "type": "word", "word": "love", "phon": "/lʌv/", "zh": "爱", "en": "I love my family.", "cn": "我爱我的家人。" }
+      }
+    }
+  ]
 }
