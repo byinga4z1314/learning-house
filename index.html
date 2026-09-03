@@ -578,22 +578,14 @@
 
   <!-- 7. 本周共学 -->
   <section>
-    <h2 class="sec-title">📖 本周共学</h2>
+    <div class="card-title-row">
+      <h2 class="sec-title">📖 本周共学</h2>
+      <button type="button" class="review-btn" id="reviewHistory">往日回顾</button>
+    </div>
     <div id="currentWeek"></div>
   </section>
 
-  <!-- 8. 历史周次列表 -->
-  <section>
-    <div class="card-title-row">
-      <h2 class="sec-title">🗂️ 历史共学</h2>
-      <button type="button" class="review-btn" id="reviewHistory">往日回顾</button>
-    </div>
-    <div class="week-history" id="weekHistory">
-      <div class="empty">以后这里会有我们一起学过的所有内容~</div>
-    </div>
-  </section>
-
-  <!-- 9. 视频分享区 -->
+  <!-- 8. 视频分享区 -->
   <section>
     <h2 class="sec-title">🎬 最近分享</h2>
     <div class="video-list" id="videoList">
@@ -1330,6 +1322,7 @@
     var SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
     var voices = [], voicesReady = false, unlocked = false;
     var audioEl = null, tipEl = null, tipTimer = 0;
+    var audioCtx = null;
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -1371,6 +1364,17 @@
     /* --- 首次有效交互时"解锁"音频：点击 / 触摸都试，直到真正解锁成功 --- */
     var audioPrimed = false;
     function unlock(){
+      // Web Audio 上下文解锁（部分浏览器需要）
+      try {
+        if(!audioCtx && (window.AudioContext || window.webkitAudioContext)){
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      } catch(e){}
+      // 微信内置浏览器：用 WeixinJSBridge 主动解锁音频
+      if(typeof WeixinJSBridge !== 'undefined'){
+        try { WeixinJSBridge.invoke('getNetworkType', {}, function(){}); } catch(e){}
+      }
       if(synth){
         try {
           var u = new SpeechSynthesisUtterance(' ');
@@ -1384,6 +1388,11 @@
       if(audioPrimed) return;
       var a = getAudio();
       if(!a) return;
+      function done(){
+        try { a.pause(); } catch(e){}
+        audioPrimed = true;
+        try { a.muted = false; } catch(e){}
+      }
       try {
         a.muted = true;
         a.pause();
@@ -1391,13 +1400,11 @@
         a.load();
         var p = a.play();
         if(p && p.then){
-          p.then(function(){ try { a.pause(); } catch(e){} audioPrimed = true; a.muted = false; })
-           .catch(function(){ a.muted = false; });
+          p.then(done).catch(done);
         } else {
-          audioPrimed = true;
-          a.muted = false;
+          done();
         }
-      } catch(e){ try { a.muted = false; } catch(e2){} }
+      } catch(e){ done(); }
     }
     if(document.addEventListener){
       // 捕获阶段监听：按钮点击前先解锁
@@ -1447,7 +1454,7 @@
       btn.classList.remove('is-net');
     }
 
-    /* --- ② 在线发音兜底（多源轮询：有道美音/英音 → 百度翻译 TTS） --- */
+    /* --- ② 在线发音兜底（多源轮询 + 等待可播放 + 失败重试） --- */
     function netAudio(text, btn){
       mark(btn);
       var a = getAudio();
@@ -1457,25 +1464,56 @@
         'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(text),
         'https://fanyi.baidu.com/gettts?lan=en&spd=3&source=web&text=' + encodeURIComponent(text)
       ];
-      var idx = 0;
+      var idx = 0, retried = false, timer = 0;
+      function cleanup(){
+        clearTimeout(timer);
+        a.onplaying = null; a.onended = null; a.onerror = null; a.oncanplaythrough = null;
+      }
+      function fail(){
+        cleanup();
+        unmark(btn);
+        tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
+                  : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
+      }
       function tryNext(){
-        if(idx >= urls.length){
-          unmark(btn);
-          tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
-                    : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
-          return;
-        }
+        if(idx >= urls.length){ fail(); return; }
+        retried = false;
+        var url = urls[idx];
         a.onplaying = function(){ if(btn) btn.classList.add('is-net'); };
-        a.onended   = function(){ unmark(btn); };
-        a.onerror   = function(){ idx++; tryNext(); };
-        try {
-          a.muted = false;
-          a.pause();
-          a.src = urls[idx];
-          a.load();
+        a.onended = function(){ cleanup(); unmark(btn); };
+        a.onerror = function(){
+          if(!retried){ retried = true; setTimeout(retrySame, 150); return; }
+          idx++; tryNext();
+        };
+        a.oncanplaythrough = function(){
+          a.oncanplaythrough = null;
           var p = a.play();
-          if(p && p.catch) p.catch(function(){ idx++; tryNext(); });
-        } catch(e){ idx++; tryNext(); }
+          if(p && p.catch){
+            p.catch(function(){
+              if(!retried){ retried = true; setTimeout(retrySame, 150); }
+              else { idx++; tryNext(); }
+            });
+          }
+        };
+        function retrySame(){
+          var p = a.play();
+          if(p && p.catch){
+            p.catch(function(){ idx++; tryNext(); });
+          }
+        }
+        try {
+          a.muted = false; a.pause(); a.src = url; a.load();
+          // 已经就绪则直接尝试播放
+          if(a.readyState >= 4){ retrySame(); }
+        } catch(e){
+          if(!retried){ retried = true; setTimeout(retrySame, 150); }
+          else { idx++; tryNext(); }
+        }
+        // 单个源最多等 4 秒，超时换下一个
+        timer = setTimeout(function(){
+          if(!retried){ retried = true; setTimeout(retrySame, 150); }
+          else { idx++; tryNext(); }
+        }, 4000);
       }
       tryNext();
     }
@@ -1512,10 +1550,10 @@
       try { synth.speak(u); } catch(e){ return false; }
       // iOS 偶发进入 paused，踢一下
       setTimeout(function(){ try { if(synth.paused) synth.resume(); } catch(e){} }, 150);
-      // 600ms 还没 onstart → 判定为"假支持"，转在线发音（手机网络慢时也够）
+      // 1200ms 还没 onstart → 判定为"假支持"，转在线发音（手机网络慢/语音包加载慢时也够）
       st.tid = setTimeout(function(){
         if(!st.started && !st.ended){ unmark(btn); fail(); }
-      }, 600);
+      }, 1200);
       return true;
     }
 
@@ -1730,9 +1768,7 @@
 
   function renderWeeks(){
     var currentBox = document.getElementById('currentWeek');
-    var historyBox = document.getElementById('weekHistory');
     currentBox.innerHTML = '';
-    historyBox.innerHTML = '';
 
     var weeks = data.weeks.slice().sort(function(a, b){ return (b.week || 0) - (a.week || 0); });
 
@@ -1773,42 +1809,6 @@
       ep.textContent = '爸妈正在准备本周内容，周六就有啦~';
       e.appendChild(ep);
       currentBox.appendChild(e);
-    }
-
-    // 历史周次：列出所有周（含本周），倒序（周数大的在前）
-    var history = weeks.slice();
-    if(history.length === 0){
-      var he = document.createElement('div');
-      he.className = 'empty';
-      he.textContent = '以后这里会有我们一起学过的所有内容~';
-      historyBox.appendChild(he);
-      return;
-    }
-    history.forEach(function(w){
-      if(!matchMode(w.owner || 'both')) return;
-      var card = document.createElement('a');
-      card.className = 'week-mini';
-      card.href = w.file || ('week-' + pad(w.week) + '.html');
-      var num = document.createElement('span');
-      num.className = 'num';
-      num.textContent = '第' + (w.week || 0) + '周';
-      var t2 = document.createElement('span');
-      t2.className = 't';
-      t2.textContent = w.title || '';
-      var go = document.createElement('span');
-      go.className = 'go';
-      go.textContent = '→';
-      card.appendChild(num);
-      card.appendChild(t2);
-      card.appendChild(go);
-      historyBox.appendChild(card);
-    });
-    // 过滤后可能一条都不剩
-    if(historyBox.children.length === 0){
-      var he2 = document.createElement('div');
-      he2.className = 'empty';
-      he2.textContent = '以后这里会有我们一起学过的所有内容~';
-      historyBox.appendChild(he2);
     }
   }
 
@@ -1909,7 +1909,7 @@
       title.textContent = '每日英语 · 往日回顾';
       body.innerHTML = buildEnglishReview();
     } else if(kind === 'history'){
-      title.textContent = '历史共学 · 往日回顾';
+      title.textContent = '共学主题 · 往日回顾';
       body.innerHTML = buildHistoryReview();
     } else {
       title.textContent = '今日一句话 · 往日回顾';
