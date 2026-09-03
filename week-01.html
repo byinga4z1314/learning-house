@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>第1周共学 · 需要vs想要</title>
 <style>
   :root{
@@ -203,7 +206,7 @@
 
   <footer>
     看完后，和爸妈聊聊你的想法吧～<br>
-    <a href="index.html">← 返回学习小屋</a>
+    <a href="index.html?v=20260903">← 返回学习小屋</a>
   </footer>
 
 </div>
@@ -252,10 +255,13 @@
   function getAudio(){
     if(audioEl) return audioEl;
     try {
-      audioEl = new Audio();
+      audioEl = document.createElement('audio');
       audioEl.preload = 'auto';
       audioEl.setAttribute('playsinline','');
       audioEl.setAttribute('webkit-playsinline','');
+      audioEl.setAttribute('x5-playsinline','');
+      audioEl.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+      document.body.appendChild(audioEl);
     } catch(e){ audioEl = null; }
     return audioEl;
   }
@@ -303,18 +309,31 @@
     mark();
     var a = getAudio();
     if(!a){ unmark(); tip('这个浏览器暂时读不了，跟着例句读一遍吧'); return; }
-    a.onplaying = function(){ btn.classList.add('is-net'); };
-    a.onended  = function(){ unmark(); };
-    a.onerror  = function(){
-      unmark();
-      tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了' : '这个浏览器不支持朗读，跟着例句读一遍吧');
-    };
-    try {
-      a.muted = false; a.pause();
-      a.src = 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
-      var p = a.play();
-      if(p && p.catch) p.catch(function(){ unmark(); tip('点一下再试一次（手机可能拦住了声音）'); });
-    } catch(e){ unmark(); tip('点一下再试一次（手机可能拦住了声音）'); }
+    var urls = [
+      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text),
+      'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(text),
+      'https://fanyi.baidu.com/gettts?lan=en&spd=3&source=web&text=' + encodeURIComponent(text)
+    ];
+    var idx = 0;
+    function tryNext(){
+      if(idx >= urls.length){
+        unmark();
+        tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
+                  : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
+        return;
+      }
+      a.onplaying = function(){ btn.classList.add('is-net'); };
+      a.onended   = function(){ unmark(); };
+      a.onerror   = function(){ idx++; tryNext(); };
+      try {
+        a.muted = false; a.pause();
+        a.src = urls[idx];
+        a.load();
+        var p = a.play();
+        if(p && p.catch) p.catch(function(){ idx++; tryNext(); });
+      } catch(e){ idx++; tryNext(); }
+    }
+    tryNext();
   }
 
   function reallySpeak(text, st, fail){
@@ -327,7 +346,7 @@
     u.onerror = function(){ unmark(); fail(); };
     try { synth.speak(u); } catch(e){ return false; }
     setTimeout(function(){ try { if(synth.paused) synth.resume(); } catch(e){} }, 150);
-    st.tid = setTimeout(function(){ if(!st.started && !st.ended){ unmark(); fail(); } }, 900);
+    st.tid = setTimeout(function(){ if(!st.started && !st.ended){ unmark(); fail(); } }, 600);
     return true;
   }
 
@@ -348,7 +367,8 @@
     if(!text) return;
     unlock();
     mark();
-    if(!synth){ netAudio(text); return; }
+    loadVoices();
+    if(!synth || !voices.length){ netAudio(text); return; }
     var ok = native(text, function(){ netAudio(text); });
     if(!ok) netAudio(text);
   }
@@ -366,6 +386,20 @@
     var s = p.getAttribute('data-say');
     if(s) speak(s);
   });
+})();
+</script>
+<script>
+/* 缓存刷新：给站内未加戳的链接统一加版本戳，避免手机浏览器读到旧版 */
+(function(){
+  var v='?v=20260903';
+  var links=document.querySelectorAll('a[href]');
+  for(var i=0;i<links.length;i++){
+    var h=links[i].getAttribute('href');
+    if(!h) continue;
+    if(/^https?:|^#|^javascript:|^mailto:/i.test(h)) continue;
+    if(h.indexOf('?')!==-1) continue;
+    links[i].setAttribute('href', h+v);
+  }
 })();
 </script>
 </body>

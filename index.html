@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>玥玥和程程的学习小屋</title>
 <style>
   :root{
@@ -1238,10 +1241,13 @@
     function getAudio(){
       if(audioEl) return audioEl;
       try {
-        audioEl = new Audio();
+        audioEl = document.createElement('audio');
         audioEl.preload = 'auto';
         audioEl.setAttribute('playsinline', '');
         audioEl.setAttribute('webkit-playsinline', '');
+        audioEl.setAttribute('x5-playsinline', '');
+        audioEl.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+        document.body.appendChild(audioEl);
       } catch(e){ audioEl = null; }
       return audioEl;
     }
@@ -1270,32 +1276,37 @@
       btn.classList.remove('is-net');
     }
 
-    /* --- ② 在线发音兜底（有道公开发音接口，国内直连、无需密钥） --- */
+    /* --- ② 在线发音兜底（多源轮询：有道美音/英音 → 百度翻译 TTS） --- */
     function netAudio(text, btn){
       mark(btn);
       var a = getAudio();
       if(!a){ unmark(btn); tip('这个浏览器暂时读不了，跟着音标读一遍吧'); return; }
-      var url = 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
-      a.onplaying = function(){ if(btn) btn.classList.add('is-net'); };
-      a.onended  = function(){ unmark(btn); };
-      a.onerror  = function(){
-        unmark(btn);
-        tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
-                  : '这个浏览器不支持朗读，跟着音标读一遍吧');
-      };
-      try {
-        a.muted = false;
-        a.pause();
-        a.src = url;
-        var p = a.play();
-        if(p && p.catch) p.catch(function(){
+      var urls = [
+        'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text),
+        'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(text),
+        'https://fanyi.baidu.com/gettts?lan=en&spd=3&source=web&text=' + encodeURIComponent(text)
+      ];
+      var idx = 0;
+      function tryNext(){
+        if(idx >= urls.length){
           unmark(btn);
-          tip('点一下再试一次（手机可能拦住了声音）');
-        });
-      } catch(e){
-        unmark(btn);
-        tip('点一下再试一次（手机可能拦住了声音）');
+          tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
+                    : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
+          return;
+        }
+        a.onplaying = function(){ if(btn) btn.classList.add('is-net'); };
+        a.onended   = function(){ unmark(btn); };
+        a.onerror   = function(){ idx++; tryNext(); };
+        try {
+          a.muted = false;
+          a.pause();
+          a.src = urls[idx];
+          a.load();
+          var p = a.play();
+          if(p && p.catch) p.catch(function(){ idx++; tryNext(); });
+        } catch(e){ idx++; tryNext(); }
       }
+      tryNext();
     }
 
     /* --- ① 原生朗读（带"是否真的开始"判定） --- */
@@ -1330,10 +1341,10 @@
       try { synth.speak(u); } catch(e){ return false; }
       // iOS 偶发进入 paused，踢一下
       setTimeout(function(){ try { if(synth.paused) synth.resume(); } catch(e){} }, 150);
-      // 900ms 还没 onstart → 判定为"假支持"，转在线发音
+      // 600ms 还没 onstart → 判定为"假支持"，转在线发音（手机网络慢时也够）
       st.tid = setTimeout(function(){
         if(!st.started && !st.ended){ unmark(btn); fail(); }
-      }, 900);
+      }, 600);
       return true;
     }
 
@@ -1342,7 +1353,9 @@
       if(!text) return;
       unlock();
       mark(btn);
-      if(!synth){ netAudio(text, btn); return; }
+      // 如果浏览器有 speechSynthesis 但没有任何语音包，直接走在线发音，不空等
+      loadVoices();
+      if(!synth || !voices.length){ netAudio(text, btn); return; }
       var ok = native(text, btn, function(){ netAudio(text, btn); });
       if(!ok) netAudio(text, btn);
     }
@@ -1551,7 +1564,7 @@
     if(current){
       var a = document.createElement('a');
       a.className = 'week-current';
-      a.href = current.file || 'week-01.html';
+      a.href = (current.file || 'week-01.html') + '?v=20260903';
       var book = document.createElement('span');
       book.className = 'book';
       book.textContent = '📖';
@@ -1848,6 +1861,20 @@
     document.addEventListener('DOMContentLoaded', init);
   }else{
     init();
+  }
+})();
+</script>
+<script>
+/* 缓存刷新：给站内未加戳的链接统一加版本戳，避免手机浏览器读到旧版 */
+(function(){
+  var v='?v=20260903';
+  var links=document.querySelectorAll('a[href]');
+  for(var i=0;i<links.length;i++){
+    var h=links[i].getAttribute('href');
+    if(!h) continue;
+    if(/^https?:|^#|^javascript:|^mailto:/i.test(h)) continue;
+    if(h.indexOf('?')!==-1) continue;
+    links[i].setAttribute('href', h+v);
   }
 })();
 </script>

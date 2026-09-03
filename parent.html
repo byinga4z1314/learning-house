@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>家长管理端 · 成长看板</title>
 <style>
   :root{
@@ -531,6 +534,20 @@
     document.addEventListener('DOMContentLoaded', init);
   }else{
     init();
+  }
+})();
+</script>
+<script>
+/* 缓存刷新：给站内未加戳的链接统一加版本戳，避免手机浏览器读到旧版 */
+(function(){
+  var v='?v=20260903';
+  var links=document.querySelectorAll('a[href]');
+  for(var i=0;i<links.length;i++){
+    var h=links[i].getAttribute('href');
+    if(!h) continue;
+    if(/^https?:|^#|^javascript:|^mailto:/i.test(h)) continue;
+    if(h.indexOf('?')!==-1) continue;
+    links[i].setAttribute('href', h+v);
   }
 })();
 </script>
