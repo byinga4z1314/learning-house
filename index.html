@@ -195,6 +195,7 @@
   /* ===== 往日回顾 按钮 + 弹层 ===== */
   .card-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .card-title-row .english-title{margin:0;}
+  .card-title-row .sec-title{margin:0;}
   .today-title{font-size:21px;font-weight:700;color:var(--ink);}
   .review-btn{
     border:1px solid var(--line);background:var(--page);color:var(--ink-soft);
@@ -257,6 +258,24 @@
   .review-kid.yue{background:var(--yue);}
   .review-kid.cheng{background:var(--cheng);}
   .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
+  /* 历史共学 · 往日回顾里的周次卡片 */
+  .review-history-item{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;margin-bottom:10px;text-decoration:none;color:var(--ink);
+    transition:transform .15s ease, background-color .15s ease;
+  }
+  .review-history-item:hover{background:#fffbf6;}
+  .review-history-item:active{transform:scale(.98);}
+  .review-history-item .rh-num{
+    flex-shrink:0;width:46px;height:46px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;line-height:1.1;text-align:center;
+  }
+  .review-history-item .rh-main{flex:1;min-width:0;}
+  .review-history-item .rh-title{font-size:17px;font-weight:700;}
+  .review-history-item .rh-desc{font-size:14px;color:var(--ink-soft);margin-top:2px;line-height:1.5;}
+  .review-history-item .rh-go{font-size:20px;color:var(--ink-soft);flex-shrink:0;}
 
   /* ===== 今日一句话 + 每日打卡 ===== */
   .today-card{
@@ -570,7 +589,10 @@
 
   <!-- 7. 历史周次列表 -->
   <section>
-    <h2 class="sec-title">🗂️ 历史共学</h2>
+    <div class="card-title-row">
+      <h2 class="sec-title">🗂️ 历史共学</h2>
+      <button type="button" class="review-btn" id="reviewHistory">往日回顾</button>
+    </div>
     <div class="week-history" id="weekHistory">
       <div class="empty">以后这里会有我们一起学过的所有内容~</div>
     </div>
@@ -1837,6 +1859,9 @@
     if(kind === 'english'){
       title.textContent = '每日英语 · 往日回顾';
       body.innerHTML = buildEnglishReview();
+    } else if(kind === 'history'){
+      title.textContent = '历史共学 · 往日回顾';
+      body.innerHTML = buildHistoryReview();
     } else {
       title.textContent = '今日一句话 · 往日回顾';
       body.innerHTML = buildSentenceReview();
@@ -1936,6 +1961,26 @@
       html += '</div>';
     });
     if(!html) html = '<div class="review-empty">暂时还没有往期一句话～</div>';
+    return html;
+  }
+
+  /* 历史共学 · 往日回顾：列出全部共学周，点击进入对应周页面 */
+  function buildHistoryReview(){
+    var weeks = (data.weeks || []).slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
+    var html = '';
+    weeks.forEach(function(w){
+      if(!matchMode(w.owner || 'both')) return;
+      var href = (w.file || ('week-' + pad(w.week) + '.html')) + '?v=20260903';
+      html += '<a class="review-history-item" href="' + escHtml(href) + '">';
+      html += '<span class="rh-num">第' + (w.week || 0) + '周</span>';
+      html += '<div class="rh-main">';
+      html += '<div class="rh-title">' + escHtml(w.title || '共学主题') + '</div>';
+      if(w.desc) html += '<div class="rh-desc">' + escHtml(w.desc) + '</div>';
+      html += '</div>';
+      html += '<span class="rh-go">→</span>';
+      html += '</a>';
+    });
+    if(!html) html = '<div class="review-empty">暂时还没有历史共学内容～</div>';
     return html;
   }
 
@@ -2067,6 +2112,8 @@
     if(reviewEnglish) reviewEnglish.addEventListener('click', function(){ openReview('english'); });
     var reviewSentence = document.getElementById('reviewSentence');
     if(reviewSentence) reviewSentence.addEventListener('click', function(){ openReview('sentence'); });
+    var reviewHistory = document.getElementById('reviewHistory');
+    if(reviewHistory) reviewHistory.addEventListener('click', function(){ openReview('history'); });
     var reviewClose = document.getElementById('reviewClose');
     if(reviewClose) reviewClose.addEventListener('click', closeReview);
     var reviewMask = document.getElementById('reviewMask');
