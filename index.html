@@ -117,6 +117,10 @@
   .entry-card .icon{font-size:40px;line-height:1;}
   .entry-card .name{font-size:19px;font-weight:700;}
   .entry-card .desc{font-size:15px;color:var(--ink-soft);line-height:1.6;}
+  /* 一起看模式下表单入口置灰不可点 */
+  .entry-card.disabled{opacity:.5;filter:grayscale(.35);cursor:not-allowed;box-shadow:none;}
+  .entry-card.disabled:hover{transform:none;background:var(--card);box-shadow:none;}
+  .entry-card.disabled .desc{color:#b98a4e;font-size:14px;}
 
   /* 单孩模式：卡片按孩子着色（暖/冷） */
   .entry-card.kid-yue{border-color:#f3c9e2;}
@@ -166,6 +170,8 @@
   }
   .speak-btn:hover{transform:scale(1.05);}
   .speak-btn:active{transform:scale(.92);background:#ffd9bd;}
+  .speak-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
+  .speak-btn:disabled:hover{transform:none;}
   /* 朗读中：按钮高亮 + 呼吸光圈，让孩子知道"正在读" */
   .speak-btn.is-playing{background:#ffc59b;animation:spPulse 1.1s ease-in-out infinite;}
   @keyframes spPulse{
@@ -256,6 +262,14 @@
   .review-kid.yue{background:var(--yue);}
   .review-kid.cheng{background:var(--cheng);}
   .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
+  /* 今日一句话回顾 · 主题筛选条 */
+  .review-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .rf-chip{
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    font-size:14px;font-family:inherit;padding:5px 10px;border-radius:999px;cursor:pointer;min-height:32px;
+  }
+  .rf-chip.on{background:var(--accent-deep);color:#fff;border-color:var(--accent-deep);}
+  .rf-chip:active{transform:scale(.95);}
   /* 共学主题 · 往日回顾里的周次卡片 */
   .review-history-item{
     display:flex;align-items:center;gap:12px;
@@ -468,6 +482,18 @@
     color:var(--ink-soft);font-size:16px;margin-bottom:8px;line-height:1.8;
   }
   footer .copy{font-size:15px;line-height:1.8;}
+  /* 当前模式指示文字 */
+  footer .mode-label{
+    font-size:15px;font-weight:700;color:var(--accent-deep);
+    background:#fff7ed;display:inline-block;padding:4px 16px;border-radius:999px;margin-bottom:10px;
+  }
+  /* 底部成长数据导出/导入按钮行 */
+  footer .tools-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px;}
+  footer .tool-btn{
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    font-size:15px;font-family:inherit;padding:9px 16px;border-radius:12px;cursor:pointer;min-height:44px;
+  }
+  footer .tool-btn:active{transform:scale(.97);}
 
   /* ===== 按模式切换整体色调 ===== */
   body[data-mode="all"]{ --page:#fdf6ea; --accent:#ff8a4c; --accent-deep:#f2702e; --gold:#ffc94d; }
@@ -625,6 +651,7 @@
 
   <!-- 10. 底部 -->
   <footer>
+    <div class="mode-label" id="modeLabel"></div>
     <div class="mode-switch" id="modeSwitch">
       <button type="button" data-mode="all" class="active">一起看</button>
       <button type="button" data-mode="yueyue" class="mode-yue">玥玥模式</button>
@@ -632,7 +659,12 @@
     </div>
     <div class="encourage" id="encourage"></div>
     <div class="copy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
-    <button type="button" class="reset-btn" id="resetIdentity">切换身份</button>
+    <div class="tools-row">
+      <button type="button" class="tool-btn" id="exportData">📤 导出成长数据</button>
+      <button type="button" class="tool-btn" id="importData">📥 导入成长数据</button>
+      <button type="button" class="reset-btn" id="resetIdentity">切换身份</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
   </footer>
 
 </div>
@@ -692,7 +724,7 @@
   ];
 
   /* 天气先写死，后面可以接天气API改这里 */
-  var WEATHER = { city: '广州', text: '晴', temp: '28℃' };
+  var WEATHER = { city: '广州', text: '晴', temp: '28℃', located: false };
 
   /* 鼓励语：每次刷新随机显示一句 */
   var ENCOURAGES = [
@@ -704,15 +736,70 @@
   ];
 
   /* ============================================================
-   * 每日一句话（按周配置，支持多周自动切换）
-   * 按星期几取内容：1周一生活常识 2周二歇后语 3周三情商 4周四科普 5周五读书名言，0/6周末
-   * 每周更新时：新建 WEEK_N 数据 + 在 WEEKS 数组追加一行（起止日期）
+   * 今日一句话 · 21主题全随机化（排期驱动，Model A）
+   * 说明：周一到周日 7 天不再绑定固定主题，由【每周排期】决定某孩某天显示
+   *       哪条素材(主题随机、同孩连续两天主题不重复)。排期由生成时写好写入本页，
+   *       浏览器只读排期展示，保证与 Obsidian 周归档一致、跨天不跳变。
+   * 每周更新时：在 SENT_SCHED 追加一周(start/end + 每孩每日期条目)
    * ============================================================ */
   var KID_NAMES = { yueyue: '玥玥', chengcheng: '程程' };
-  var WEEKDAY_LABEL = {
-    1: '周一 · 生活常识', 2: '周二 · 歇后语', 3: '周三 · 情商金句',
-    4: '周四 · 科普冷知识', 5: '周五 · 读书名言', 6: '周末愉快', 0: '周末愉快'
-  };
+  /* 21 主题池（合并重叠后）：id / icon / name —— 素材打标、回顾筛选、归档共用 */
+  var TOPICS = [
+    { id:'life_common',   icon:'💡', name:'生活常识与技能' },
+    { id:'idiom_riddle',  icon:'🎭', name:'歇后语·谚语' },
+    { id:'eq_heart',      icon:'❤️', name:'情商·内心力' },
+    { id:'fun_science',   icon:'🔬', name:'科普·科学原理' },
+    { id:'book_quote',    icon:'📖', name:'读书名言·阅读' },
+    { id:'kids_finance',  icon:'💰', name:'少儿财商' },
+    { id:'history_story', icon:'🏛️', name:'历史人文故事' },
+    { id:'composition',   icon:'✍️', name:'作文摘抄素材' },
+    { id:'time_habit',    icon:'🌱', name:'时间与习惯' },
+    { id:'social_wise',   icon:'🤝', name:'社交相处智慧' },
+    { id:'think_wise',    icon:'🧩', name:'思辨·逻辑' },
+    { id:'geo_know',      icon:'🌍', name:'地理小知识' },
+    { id:'sinology',      icon:'📜', name:'国学小短句' },
+    { id:'art_aesthetic', icon:'🎨', name:'美育与艺术' },
+    { id:'self_safety',   icon:'🛡️', name:'自我保护安全' },
+    { id:'ideal_goal',    icon:'🚀', name:'少年志向理想' },
+    { id:'nature_life',   icon:'🐾', name:'生命与自然观察' },
+    { id:'speak_skill',   icon:'💬', name:'语言表达技巧' },
+    { id:'rule_moral',    icon:'⚖️', name:'是非与规则' },
+    { id:'gratitude',     icon:'🧑🤝🧑', name:'感恩与家庭' },
+    { id:'info_wise',     icon:'🌐', name:'信息辨别' }
+  ];
+  var TOPIC_MAP = {};
+  TOPICS.forEach(function(t){ TOPIC_MAP[t.id] = t; });
+  function topicLabel(id){ var t = TOPIC_MAP[id]; return t ? (t.icon + ' ' + t.name) : ''; }
+  /* 排期素材条目：{ main, extra, topic }；week 数组每项 { start, end, yueyue:{date:条目}, chengcheng:{date:条目} } */
+  var SENT_SCHED = [];
+
+  /* 老数据(5类固定主题)迁移工具：把 WEEK_1..3 中按键1~5(原周一~周五主题)与周末键，
+     标注真实主题 topic，并按 每周start~end 的7个日期落到 SENT_SCHED。
+     主题映射：键1=生活常识→life_common；键2=歇后语→idiom_riddle；键3=情商→eq_heart；
+               键4=科普→fun_science；键5=读书→book_quote；周末键6/0→gratitude。
+     转换后仍按"孩/日期"存，供 renderSentences 读取；后续每周用同一结构直接追加。
+     注意：buildSentenceWeek 需在 WEEK_1..3 定义之后调用（下方 WEEK_3 后 push）。 */
+  function buildSentenceWeek(start, end, W){
+    var wk = { start: start, end: end, yueyue: {}, chengcheng: {} };
+    var dayMap = { 1:'life_common', 2:'idiom_riddle', 3:'eq_heart', 4:'fun_science', 5:'book_quote', 6:'gratitude', 0:'gratitude' };
+    ['yueyue','chengcheng'].forEach(function(kid){
+      var src = (W && W[kid]) || {};
+      var sd = new Date(start);
+      var dates = [];
+      for(var i = 0; i < 7; i++){ dates.push(dateStr(new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + i))); }
+      [1,2,3,4,5,6].forEach(function(dn, i){
+        var it = src[dn];
+        if(!it || !it.main) return;
+        wk[kid][dates[i]] = { main: it.main, extra: it.extra || '', topic: dayMap[dn] || '' };
+      });
+      if(!wk[kid][dates[6]]){
+        var it0 = src[0];
+        if(it0 && it0.main) wk[kid][dates[6]] = { main: it0.main, extra: it0.extra || '', topic: 'gratitude' };
+      }
+    });
+    return wk;
+  }
+
   /* 第1周（2026-09-07 ~ 2026-09-13） */
   var WEEK_1 = {
     yueyue: {
@@ -905,12 +992,10 @@
     }
   };
 
-  /* 周次表：按起止日期自动切换显示哪一周的内容 */
-  var WEEKS = [
-    { start: '2026-09-07', end: '2026-09-13', yueyue: WEEK_1.yueyue, chengcheng: WEEK_1.chengcheng },
-    { start: '2026-09-14', end: '2026-09-20', yueyue: WEEK_2.yueyue, chengcheng: WEEK_2.chengcheng },
-    { start: '2026-09-21', end: '2026-09-27', yueyue: WEEK_3.yueyue, chengcheng: WEEK_3.chengcheng }
-  ];
+  /* 把老数据(WEEK_1..3)转成排期入库 —— 必须在 WEEK_1..3 定义之后执行 */
+  SENT_SCHED.push(buildSentenceWeek('2026-09-07','2026-09-13',WEEK_1));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-14','2026-09-20',WEEK_2));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-21','2026-09-27',WEEK_3));
 
   /* 每日英语（固定模块，独立于「今日一句话」）：按周配置，玥玥程程难度不同 */
   var ENGLISH_WEEK_1 = {
@@ -944,19 +1029,6 @@
     }
     if(!pick){
       pick = (today < ENGLISH_WEEKS[0].start) ? ENGLISH_WEEKS[0] : ENGLISH_WEEKS[ENGLISH_WEEKS.length - 1];
-    }
-    return pick;
-  }
-
-  /* 按今天日期选当周内容：周期内用当周；早于第一期用第一期，晚于最后一期用最后一期 */
-  function currentWeekData(){
-    var today = dateStr();
-    var pick = null;
-    for(var i = 0; i < WEEKS.length; i++){
-      if(today >= WEEKS[i].start && today <= WEEKS[i].end){ pick = WEEKS[i]; break; }
-    }
-    if(!pick){
-      pick = (today < WEEKS[0].start) ? WEEKS[0] : WEEKS[WEEKS.length - 1];
     }
     return pick;
   }
@@ -1062,6 +1134,7 @@
     var s = '今天是 ' + now.getFullYear() + '年' + (now.getMonth() + 1) + '月'
           + now.getDate() + '日 ' + weekNames[now.getDay()]
           + ' | ' + WEATHER.city + ' ' + WEATHER.text + ' ' + WEATHER.temp;
+    if(!WEATHER.located) s += '(默认)';   // 未获取到实时定位/天气时的优雅降级提示
     el.textContent = s;
   }
 
@@ -1110,7 +1183,7 @@
             })
             .catch(function(){});
         })
-        .then(function(){ renderDateWeather(); });
+        .then(function(){ WEATHER.located = true; renderDateWeather(); });
     }, function(){ /* 拒绝定位：保留兜底广州 */ }, { enableHighAccuracy:false, timeout:8000, maximumAge:600000 });
   }
 
@@ -1173,17 +1246,47 @@
     el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()];
   }
 
+  /* 排期查找：返回 {week, item} 给某孩某日期；无对应周则钳制到最近周 */
+  function sentLookup(kid, dateS){
+    if(!SENT_SCHED.length) return null;
+    var pick = null;
+    for(var i = 0; i < SENT_SCHED.length; i++){
+      if(dateS >= SENT_SCHED[i].start && dateS <= SENT_SCHED[i].end){ pick = SENT_SCHED[i]; break; }
+    }
+    if(!pick) pick = (dateS < SENT_SCHED[0].start) ? SENT_SCHED[0] : SENT_SCHED[SENT_SCHED.length - 1];
+    var item = (pick[kid] && pick[kid][dateS]) ? pick[kid][dateS] : null;
+    return { week: pick, item: item };
+  }
+
+  /* 确定性字符串哈希：保证当天回退结果稳定不随刷新跳变 */
+  function hashStr(s){
+    var h = 0;
+    for(var i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    return Math.abs(h);
+  }
+
+  /* 无排期条目时的兜底：从历史排期(该孩所有已排素材)取一条当天稳定的，绝不显示"爸妈正在准备" */
+  function sentFallback(kid, dateS){
+    var pool = [];
+    SENT_SCHED.forEach(function(wk){
+      var per = wk[kid] || {};
+      Object.keys(per).forEach(function(d){ var it = per[d]; if(it && it.main) pool.push(it); });
+    });
+    if(!pool.length) return null;
+    var idx = hashStr(dateS + '_' + kid) % pool.length;
+    var it = pool[idx];
+    return { main: it.main, extra: it.extra, topic: it.topic || '', fallback: true };
+  }
+
   function renderSentences(){
     var box = document.getElementById('sentenceCards');
     if(!box) return;
     box.innerHTML = '';
-    var day = new Date().getDay();
-    var weekData = currentWeekData();
-    // 今日一句话主题：周一生活常识 / 周二歇后语 / 周三情商 / 周四科普 / 周五读书名言；周末显示共学提示
-    var SRC = { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 0:0 };
-    var srcDay = SRC[day];
+    var today = dateStr();
     visibleKids().forEach(function(kid){
-      var dayData = srcDay ? (weekData[kid] && weekData[kid][srcDay]) : null;
+      var res = sentLookup(kid, today);
+      var dayData = (res && res.item) ? res.item : sentFallback(kid, today);
+      var isFallback = !(res && res.item);
       var card = document.createElement('div');
       card.className = 'ts-card';
       var label = document.createElement('div');
@@ -1194,15 +1297,16 @@
         chip.textContent = KID_NAMES[kid];
         label.appendChild(chip);
       }
+      var tName = (dayData && dayData.topic) ? topicLabel(dayData.topic) : '';
       var lt = document.createElement('span');
-      lt.textContent = '✨ 今日一句话 · ' + (WEEKDAY_LABEL[day] || '');
+      lt.textContent = '✨ 今日一句话 · ' + (tName || '每日一句') + (isFallback ? ' · 重温' : '');
       label.appendChild(lt);
       card.appendChild(label);
-      if(!dayData){
+      if(!dayData || !dayData.main){
         var ph = document.createElement('div');
         ph.className = 'ts-main';
         ph.style.color = 'var(--ink-soft)';
-        ph.textContent = '今天读一句好书里的话～（爸妈正在准备）';
+        ph.textContent = '今天歇一歇，读一本喜欢的书吧~';
         card.appendChild(ph);
         box.appendChild(card);
         return;
@@ -1213,7 +1317,7 @@
       var extra = document.createElement('div');
       extra.className = 'ts-extra';
       extra.hidden = true;
-      extra.innerHTML = dayData.extra;
+      extra.innerHTML = dayData.extra || '';
       var hint = document.createElement('div');
       hint.className = 'ts-hint';
       hint.textContent = '点卡片看更多 ↓';
@@ -1481,6 +1585,8 @@
     try { synth = window.speechSynthesis || null; } catch(e){ synth = null; }
     var hasUtter = (typeof window.SpeechSynthesisUtterance === 'function');
     if(!synth || !hasUtter) synth = null;
+    /* 是否连最基本的音频能力都没有（native 朗读 + 在线 TTS + audio 元素全缺）→ 极罕见才置灰 */
+    var noAudio = (!synth) && !(window.Audio || window.webkitAudio);
 
     var SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
     var voices = [], voicesReady = false, unlocked = false;
@@ -1739,7 +1845,7 @@
       speak(text, btn);
     }
 
-    return { speak: speak, speakWordSentence: speakWordSentence, tip: tip, isIOS: isIOS };
+    return { speak: speak, speakWordSentence: speakWordSentence, tip: tip, isIOS: isIOS, supported: !noAudio };
   })();
 
   function speakText(text){ Speaker.speak(text, null); }
@@ -1786,7 +1892,8 @@
       var p = document.createElement('span');
       p.className = 'eng-phon'; p.textContent = d.phon || '';
       var sp = document.createElement('button');
-      sp.type = 'button'; sp.className = 'speak-btn'; sp.textContent = '🔊';
+      sp.type = 'button'; sp.className = 'speak-btn' + (Speaker.supported ? '' : ' no-tts'); sp.textContent = '🔊';
+      if(!Speaker.supported) sp.disabled = true;
       sp.setAttribute('data-word', d.word);
       var hasEx = !!(d.en && String(d.en).trim() && d.en !== d.word);
       sp.setAttribute('data-sentence', hasEx ? d.en : '');
@@ -1817,15 +1924,23 @@
     renderReadLog();
   }
 
+  var MODE_BTN_LABEL = { all: '一起看', yueyue: '玥玥模式', chengcheng: '程程模式' };
+  var MODE_TEXT = { all: '当前：一起看 · 全家共学', yueyue: '当前：玥玥模式', chengcheng: '当前：程程模式' };
   function renderModeButtons(){
     var btns = document.querySelectorAll('#modeSwitch button');
     for(var i = 0; i < btns.length; i++){
-      if(btns[i].getAttribute('data-mode') === state.mode){
-        btns[i].classList.add('active');
+      var b = btns[i];
+      var md = b.getAttribute('data-mode');
+      if(md === state.mode){
+        b.classList.add('active');
+        b.textContent = '✓ ' + (MODE_BTN_LABEL[md] || b.textContent.replace(/^✓\s*/, ''));
       }else{
-        btns[i].classList.remove('active');
+        b.classList.remove('active');
+        b.textContent = MODE_BTN_LABEL[md] || b.textContent.replace(/^✓\s*/, '');
       }
     }
+    var lab = document.getElementById('modeLabel');
+    if(lab) lab.textContent = MODE_TEXT[state.mode] || '当前：一起看 · 全家共学';
   }
 
   function renderTodo(){
@@ -1879,13 +1994,18 @@
     return FORM_LINKS[kid][key];
   }
 
-  /* 生成单个入口按钮（a.entry-card，新窗口打开） */
-  function makeEntryCard(kid, meta){
+  /* 生成单个入口按钮（a.entry-card，新窗口打开）。disabled=true 时(一起看模式)置灰不可点 */
+  function makeEntryCard(kid, meta, disabled){
     var a = document.createElement('a');
-    a.className = 'entry-card ' + (kid === 'yueyue' ? 'kid-yue' : 'kid-cheng');
-    a.href = resolveLink(kid, meta.key);
-    a.target = '_blank';
-    a.rel = 'noopener';
+    a.className = 'entry-card ' + (kid === 'yueyue' ? 'kid-yue' : 'kid-cheng') + (disabled ? ' disabled' : '');
+    if(disabled){
+      a.removeAttribute('href');
+      a.setAttribute('aria-disabled', 'true');
+    }else{
+      a.href = resolveLink(kid, meta.key);
+      a.target = '_blank';
+      a.rel = 'noopener';
+    }
     a.setAttribute('data-kid', kid);
     a.setAttribute('data-key', meta.key);
     var ic = document.createElement('span');
@@ -1896,7 +2016,7 @@
     nm.textContent = meta.name;
     var ds = document.createElement('span');
     ds.className = 'desc';
-    ds.textContent = meta.desc;
+    ds.textContent = disabled ? '请切换孩子模式填写表单' : meta.desc;
     a.appendChild(ic);
     a.appendChild(nm);
     a.appendChild(ds);
@@ -1918,7 +2038,7 @@
         title.className = 'entry-col-title ' + (kid === 'yueyue' ? 'yue' : 'cheng');
         title.textContent = (kid === 'yueyue' ? '👧 玥玥的' : '👦 程程的');
         col.appendChild(title);
-        ENTRY_META.forEach(function(m){ col.appendChild(makeEntryCard(kid, m)); });
+        ENTRY_META.forEach(function(m){ col.appendChild(makeEntryCard(kid, m, true)); });
         cols.appendChild(col);
       });
       area.appendChild(cols);
@@ -2076,6 +2196,7 @@
       title.textContent = '共学主题 · 往日回顾';
       body.innerHTML = buildHistoryReview();
     } else {
+      sentenceFilter = '';   // 每次打开句子回顾从「全部」开始
       title.textContent = '今日一句话 · 往日回顾';
       body.innerHTML = buildSentenceReview();
     }
@@ -2101,7 +2222,7 @@
     html += '<span class="review-type">' + typeName + '</span>';
     html += '</div>';
     html += '<div class="review-text">' + escHtml(it.word);
-    html += ' <button type="button" class="speak-btn review-speak" aria-label="朗读" data-word="' + escHtml(it.word) + '" data-sentence="' + escHtml(hasEx ? it.en : '') + '">🔊</button>';
+    html += ' <button type="button" class="speak-btn review-speak' + (Speaker.supported ? '' : ' no-tts') + '"' + (Speaker.supported ? '' : ' disabled') + ' aria-label="朗读" data-word="' + escHtml(it.word) + '" data-sentence="' + escHtml(hasEx ? it.en : '') + '">🔊</button>';
     html += '</div>';
     if(it.phon) html += '<div class="review-phon">' + escHtml(it.phon) + '</div>';
     if(it.zh) html += '<div class="review-zh">' + escHtml(it.zh) + '</div>';
@@ -2139,41 +2260,56 @@
     if(!html) html = '<div class="review-empty">暂时还没有往期英语素材～</div>';
     return html;
   }
-  function sentenceReviewItemHTML(it, day, kid){
+  function sentenceReviewItemHTML(it, dateS, kid){
+    var tName = (it.topic && TOPIC_MAP[it.topic]) ? (TOPIC_MAP[it.topic].icon + ' ' + TOPIC_MAP[it.topic].name) : '';
     var html = '<div class="review-item">';
     html += '<div class="review-item-head">';
     html += '<span class="review-kid ' + kid + '">' + KID_NAMES[kid] + '</span>';
-    html += '<span class="review-day">' + (WEEKDAY_LABEL[day] || ('周'+day)) + '</span>';
+    if(dateS) html += '<span class="review-day">' + dateS + '</span>';
+    if(tName) html += '<span class="review-type">' + tName + '</span>';
     html += '</div>';
     html += '<div class="review-ts-main">' + it.main + '</div>';
     if(it.extra) html += '<div class="review-ts-extra">' + it.extra + '</div>';
     html += '</div>';
     return html;
   }
+  /* 往日回顾「今日一句话」：按 SENT_SCHED 列表 + 主题筛选 */
+  var sentenceFilter = '';   // '' = 全部
+  function sentenceFilterBar(){
+    var chips = '<button type="button" class="rf-chip' + (sentenceFilter === '' ? ' on' : '') + '" data-topic="">全部</button>';
+    TOPICS.forEach(function(t){
+      chips += '<button type="button" class="rf-chip' + (sentenceFilter === t.id ? ' on' : '') + '" data-topic="' + t.id + '">' + t.icon + '</button>';
+    });
+    return '<div class="review-filter">' + chips + '</div>';
+  }
   function buildSentenceReview(){
     var kids = visibleKids();
-    var weeks = WEEKS || [];
+    var weeks = SENT_SCHED || [];
     if(!weeks.length) return '<div class="review-empty">暂时还没有往期一句话～</div>';
-    var dayOrder = [1,2,3,4,5,6,0];
-    var html = '';
+    var html = sentenceFilterBar();
     weeks.forEach(function(wk, wi){
       var hasAny = false;
       kids.forEach(function(kid){
-        var kd = wk[kid] || {};
-        dayOrder.forEach(function(d){ if(kd[d] && kd[d].main) hasAny = true; });
+        var per = wk[kid] || {};
+        Object.keys(per).forEach(function(d){
+          var it = per[d];
+          if(it && it.main && (!sentenceFilter || it.topic === sentenceFilter)) hasAny = true;
+        });
       });
       if(!hasAny) return;
       html += '<div class="review-week">';
       html += '<div class="review-week-title">第' + (wi+1) + '周（' + wk.start + ' ~ ' + wk.end + '）</div>';
       kids.forEach(function(kid){
-        var kd = wk[kid] || {};
-        dayOrder.forEach(function(d){
-          if(kd[d] && kd[d].main) html += sentenceReviewItemHTML(kd[d], d, kid);
+        var per = wk[kid] || {};
+        var dates = Object.keys(per).sort();
+        dates.forEach(function(d){
+          var it = per[d];
+          if(it && it.main && (!sentenceFilter || it.topic === sentenceFilter)) html += sentenceReviewItemHTML(it, d, kid);
         });
       });
       html += '</div>';
     });
-    if(!html) html = '<div class="review-empty">暂时还没有往期一句话～</div>';
+    if(!html) html = sentenceFilterBar() + '<div class="review-empty">这个主题还没有历史内容～</div>';
     return html;
   }
 
@@ -2241,6 +2377,51 @@
         localStorage.removeItem(SAT_CLOSED_PREFIX + dateStr());
       } catch(e){}
       location.reload();
+    });
+
+    // 导出 / 导入成长数据（学习小屋相关的 localStorage 键）
+    function allowKey(k){ return k === IDENTITY_KEY || k === 'wb_readlog' || k.indexOf('wb_daily_') === 0 || k.indexOf(SAT_CLOSED_PREFIX) === 0; }
+    var expBtn = document.getElementById('exportData');
+    if(expBtn) expBtn.addEventListener('click', function(){
+      try{
+        var out = {}, i, k;
+        for(i = 0; i < localStorage.length; i++){
+          k = localStorage.key(i);
+          if(k && allowKey(k)) out[k] = localStorage.getItem(k);
+        }
+        var blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'learning-house-backup-' + dateStr() + '.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 300);
+      }catch(e){ if(typeof Speaker !== 'undefined') Speaker.tip('导出失败，请重试'); }
+    });
+    var impBtn = document.getElementById('importData');
+    var impFile = document.getElementById('importFile');
+    if(impBtn && impFile) impBtn.addEventListener('click', function(){ impFile.click(); });
+    if(impFile) impFile.addEventListener('change', function(){
+      var f = impFile.files && impFile.files[0];
+      impFile.value = '';
+      if(!f) return;
+      var rd = new FileReader();
+      rd.onload = function(){
+        try{
+          var data = JSON.parse(rd.result);
+          if(!data || typeof data !== 'object') throw new Error('bad');
+          var n = 0;
+          Object.keys(data).forEach(function(k){
+            if(allowKey(k)){ try{ localStorage.setItem(k, data[k]); n++; }catch(e){} }
+          });
+          if(typeof Speaker !== 'undefined') Speaker.tip('已导入 ' + n + ' 条成长数据，即将刷新');
+          setTimeout(function(){ location.reload(); }, 800);
+        }catch(e){
+          if(typeof Speaker !== 'undefined') Speaker.tip('文件格式不对，请选择导出的 JSON');
+        }
+      };
+      rd.readAsText(f);
     });
 
     // 今日一句话卡片：点击展开/收起补充内容
@@ -2326,11 +2507,18 @@
     if(reviewClose) reviewClose.addEventListener('click', closeReview);
     var reviewMask = document.getElementById('reviewMask');
     if(reviewMask) reviewMask.addEventListener('click', function(ev){ if(ev.target === reviewMask) closeReview(); });
-    // 往日回顾里的朗读按钮（事件委托，弹层内容每次重建但容器不变）
+    // 往日回顾里的朗读按钮 / 主题筛选 chip（事件委托，弹层内容每次重建但容器不变）
     var reviewBody = document.getElementById('reviewBody');
     if(reviewBody) reviewBody.addEventListener('click', function(ev){
       var t = ev.target;
       if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
+      var chip = t.closest ? t.closest('.rf-chip') : null;
+      if(chip){
+        sentenceFilter = chip.getAttribute('data-topic') || '';
+        reviewBody.innerHTML = buildSentenceReview();
+        try { reviewBody.scrollTop = 0; } catch(e){}
+        return;
+      }
       var btn = t.closest ? t.closest('.speak-btn') : null;
       if(!btn) return;
       var word = btn.getAttribute('data-word');
