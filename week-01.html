@@ -229,6 +229,7 @@
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var voices = [], unlocked = false, audioEl = null, tipEl = null, tipTimer = 0;
+  var audioCtx = null;
 
   function loadVoices(){
     if(!synth) return;
@@ -275,18 +276,27 @@
   function primeAudio(){
     if(audioPrimed) return;
     var a = getAudio(); if(!a) return;
+    function done(){
+      try { a.pause(); } catch(e){}
+      audioPrimed = true;
+      try { a.muted = false; } catch(e){}
+    }
     try {
       a.muted = true; a.pause(); a.src = SILENT_WAV; a.load();
       var p = a.play();
-      if(p && p.then){
-        p.then(function(){ try { a.pause(); } catch(e){} audioPrimed = true; a.muted = false; })
-         .catch(function(){ a.muted = false; });
-      } else {
-        audioPrimed = true; a.muted = false;
-      }
-    } catch(e){ try { a.muted = false; } catch(e2){} }
+      if(p && p.then){ p.then(done).catch(done); } else { done(); }
+    } catch(e){ done(); }
   }
   function unlock(){
+    try {
+      if(!audioCtx && (window.AudioContext || window.webkitAudioContext)){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    } catch(e){}
+    if(typeof WeixinJSBridge !== 'undefined'){
+      try { WeixinJSBridge.invoke('getNetworkType', {}, function(){}); } catch(e){}
+    }
     if(synth){
       try {
         var u = new SpeechSynthesisUtterance(' ');
@@ -324,24 +334,54 @@
       'https://dict.youdao.com/dictvoice?type=1&audio=' + encodeURIComponent(text),
       'https://fanyi.baidu.com/gettts?lan=en&spd=3&source=web&text=' + encodeURIComponent(text)
     ];
-    var idx = 0;
+    var idx = 0, retried = false, timer = 0;
+    function cleanup(){
+      clearTimeout(timer);
+      a.onplaying = null; a.onended = null; a.onerror = null; a.oncanplaythrough = null;
+    }
+    function fail(){
+      cleanup();
+      unmark();
+      tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
+                : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
+    }
     function tryNext(){
-      if(idx >= urls.length){
-        unmark();
-        tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了'
-                  : '手机浏览器拦住了声音，先点一下屏幕空白处，再点朗读');
-        return;
-      }
+      if(idx >= urls.length){ fail(); return; }
+      retried = false;
+      var url = urls[idx];
       a.onplaying = function(){ btn.classList.add('is-net'); };
-      a.onended   = function(){ unmark(); };
-      a.onerror   = function(){ idx++; tryNext(); };
-      try {
-        a.muted = false; a.pause();
-        a.src = urls[idx];
-        a.load();
+      a.onended = function(){ cleanup(); unmark(); };
+      a.onerror = function(){
+        if(!retried){ retried = true; setTimeout(retrySame, 150); return; }
+        idx++; tryNext();
+      };
+      a.oncanplaythrough = function(){
+        a.oncanplaythrough = null;
         var p = a.play();
-        if(p && p.catch) p.catch(function(){ idx++; tryNext(); });
-      } catch(e){ idx++; tryNext(); }
+        if(p && p.catch){
+          p.catch(function(){
+            if(!retried){ retried = true; setTimeout(retrySame, 150); }
+            else { idx++; tryNext(); }
+          });
+        }
+      };
+      function retrySame(){
+        var p = a.play();
+        if(p && p.catch){
+          p.catch(function(){ idx++; tryNext(); });
+        }
+      }
+      try {
+        a.muted = false; a.pause(); a.src = url; a.load();
+        if(a.readyState >= 4){ retrySame(); }
+      } catch(e){
+        if(!retried){ retried = true; setTimeout(retrySame, 150); }
+        else { idx++; tryNext(); }
+      }
+      timer = setTimeout(function(){
+        if(!retried){ retried = true; setTimeout(retrySame, 150); }
+        else { idx++; tryNext(); }
+      }, 4000);
     }
     tryNext();
   }
@@ -356,7 +396,7 @@
     u.onerror = function(){ unmark(); fail(); };
     try { synth.speak(u); } catch(e){ return false; }
     setTimeout(function(){ try { if(synth.paused) synth.resume(); } catch(e){} }, 150);
-    st.tid = setTimeout(function(){ if(!st.started && !st.ended){ unmark(); fail(); } }, 600);
+    st.tid = setTimeout(function(){ if(!st.started && !st.ended){ unmark(); fail(); } }, 1200);
     return true;
   }
 
