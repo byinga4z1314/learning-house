@@ -390,6 +390,8 @@
   var box = document.getElementById('engBox');
   if(box) box.addEventListener('click', function(ev){
     var t = ev.target;
+    // 手机上点击目标经常是文本节点，文本节点没有 closest()，归一化到父元素
+    if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
     if(t === btn || (btn.contains && btn.contains(t))) return;
     var p = t.closest ? t.closest('.en-line') : null;
     if(!p) return;
