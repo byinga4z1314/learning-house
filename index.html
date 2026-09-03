@@ -145,6 +145,7 @@
     padding:16px 18px;margin-top:16px;
   }
   .english-card[hidden]{display:none;}
+  section > .english-card:first-child{margin-top:0;}
   .english-title{font-size:21px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
   .eng-block{padding:10px 0;}
   .eng-block + .eng-block{border-top:1px dashed var(--line);}
@@ -283,6 +284,7 @@
     box-shadow:0 3px 12px rgba(120,90,40,.07);
     padding:16px 18px;margin-top:16px;
   }
+  section > .today-card:first-child{margin-top:0;}
   .today-date{
     text-align:center;color:var(--ink-soft);font-size:15px;
     padding-bottom:10px;border-bottom:1px dashed var(--line);margin-bottom:12px;
@@ -545,21 +547,8 @@
     <button type="button" class="sh-close" id="shClose" aria-label="关闭">×</button>
   </div>
 
-  <!-- 3. 待办区：爸妈要回复的事 -->
+  <!-- 3. 每日英语（固定模块，位于今日一句话上方） -->
   <section>
-    <h2 class="sec-title">📌 爸妈要回复的事</h2>
-    <div class="card" id="todoCard">
-      <div class="empty" id="todoEmpty">暂时没有待回复的事~</div>
-      <div id="todoList"></div>
-    </div>
-  </section>
-
-  <!-- 4. 四大入口区（按模式动态渲染：单孩 4 个 / 一起看 8 个分两列） -->
-  <section>
-    <h2 class="sec-title">✏️ 我要做的事</h2>
-    <div id="entryArea"></div>
-
-    <!-- 每日英语（固定模块，位于今日一句话上方） -->
     <div class="english-card" id="englishCard">
       <div class="card-title-row">
         <div class="english-title">每日英语</div>
@@ -567,8 +556,10 @@
       </div>
       <div id="englishBody"></div>
     </div>
+  </section>
 
-    <!-- 今日一句话 + 每日打卡 -->
+  <!-- 4. 今日一句话 + 每日打卡 -->
+  <section>
     <div class="today-card" id="todayCard">
       <div class="card-title-row">
         <div class="today-title">今日一句话</div>
@@ -579,6 +570,21 @@
       <div id="streakArea"></div>
       <div class="check-row" id="checkRow"></div>
     </div>
+  </section>
+
+  <!-- 5. 待办区：爸妈要回复的事 -->
+  <section>
+    <h2 class="sec-title">📌 爸妈要回复的事</h2>
+    <div class="card" id="todoCard">
+      <div class="empty" id="todoEmpty">暂时没有待回复的事~</div>
+      <div id="todoList"></div>
+    </div>
+  </section>
+
+  <!-- 6. 四大入口区（按模式动态渲染：单孩 4 个 / 一起看 8 个分两列） -->
+  <section>
+    <h2 class="sec-title">✏️ 我要做的事</h2>
+    <div id="entryArea"></div>
   </section>
 
   <!-- 6. 本周共学 -->
