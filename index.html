@@ -1998,6 +1998,8 @@
     var englishBody = document.getElementById('englishBody');
     if(englishBody) englishBody.addEventListener('click', function(ev){
       var t = ev.target;
+      // 手机上点击目标经常是文本节点，文本节点没有 closest()，归一化到父元素
+      if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
       var btn = t.closest ? t.closest('.speak-btn') : null;
       if(btn){
         var word = btn.getAttribute('data-word');
@@ -2072,7 +2074,9 @@
     // 往日回顾里的朗读按钮（事件委托，弹层内容每次重建但容器不变）
     var reviewBody = document.getElementById('reviewBody');
     if(reviewBody) reviewBody.addEventListener('click', function(ev){
-      var btn = ev.target.closest ? ev.target.closest('.speak-btn') : null;
+      var t = ev.target;
+      if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
+      var btn = t.closest ? t.closest('.speak-btn') : null;
       if(!btn) return;
       var word = btn.getAttribute('data-word');
       var sentence = btn.getAttribute('data-sentence');
