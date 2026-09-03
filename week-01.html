@@ -48,6 +48,9 @@
   .eng-box .word{font-size:22px;font-weight:700;}
   .eng-box .phon{color:var(--ink-soft);font-size:15px;margin-left:6px;}
   .eng-box .line{margin:6px 0 0;}
+  /* 点击朗读：手机上目标更大，孩子好按 */
+  .en-line{cursor:pointer;-webkit-tap-highlight-color:rgba(232,122,60,.18);}
+  .en-line:active{opacity:.6;}
   /* 视频大按钮 */
   .video-list{display:flex;flex-direction:column;gap:12px;}
   .video-btn{
@@ -77,6 +80,23 @@
   .speak-btn:hover{transform:scale(1.05);background:var(--accent-deep);}
   .speak-btn:active{transform:scale(.95);}
   .speak-btn svg{width:18px;height:18px;fill:currentColor;}
+  /* 朗读中：呼吸光圈，孩子知道"正在读" */
+  .speak-btn.is-playing{animation:spPulse 1.1s ease-in-out infinite;}
+  @keyframes spPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(232,122,60,.50);}
+    50%    {box-shadow:0 0 0 9px rgba(232,122,60,0);}
+  }
+  .speak-btn.is-net{background:#4a9d5f;}
+  .speak-tip{
+    position:fixed;left:50%;bottom:26px;z-index:99;
+    transform:translateX(-50%) translateY(14px);
+    background:rgba(74,59,50,.94);color:#fff;
+    padding:11px 18px;border-radius:999px;font-size:15px;line-height:1.5;
+    max-width:88vw;text-align:center;
+    opacity:0;pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .speak-tip.show{opacity:1;transform:translateX(-50%) translateY(0);}
   footer{text-align:center;margin-top:30px;padding-top:20px;
     border-top:1px solid var(--line);color:var(--ink-soft);font-size:16px;line-height:1.8;}
   footer a{color:var(--accent-deep);text-decoration:none;font-weight:700;}
@@ -147,11 +167,15 @@
   <!-- 6. 5分钟趣味英语 -->
   <section class="card">
     <h2>🔤 5分钟趣味英语（need / want）<button class="speak-btn" id="speakEng" type="button"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> 朗读</button></h2>
-    <div class="eng-box">
-      <div><span class="word">need</span><span class="phon">/niːd/ 需要</span>　　<span class="word">want</span><span class="phon">/wɒnt/ 想要</span></div>
-      <p class="line">I need water. 我需要水。</p>
-      <p class="line">I want a toy. 我想要一个玩具。</p>
+    <div class="eng-box" id="engBox">
+      <div>
+        <span class="word en-line" data-say="need">need</span><span class="phon">/niːd/ 需要</span>
+        <span class="word en-line" data-say="want">want</span><span class="phon">/wɒnt/ 想要</span>
+      </div>
+      <p class="line en-line" data-say="I need water.">I need water. 我需要水。</p>
+      <p class="line en-line" data-say="I want a toy.">I want a toy. 我想要一个玩具。</p>
     </div>
+    <p style="margin-top:10px;color:var(--ink-soft);font-size:15px;">小提示：手机上点单词或句子也能单独听发音～</p>
     <p style="margin-top:10px;">小游戏：妈妈说一个词，你举"需要"或"想要"的牌子，看谁举得又快又准！</p>
   </section>
 
@@ -184,22 +208,163 @@
 
 </div>
 <script>
+/* 朗读引擎：手机 / 平板 / 微信内置浏览器 通用
+ * ① 浏览器原生 speechSynthesis（离线） →
+ * ② 原生不出声时自动切在线发音 →
+ * ③ 都失败给底部提示。
+ * 手机三个坑：iOS 必须在点击里同步 speak 且 cancel 后不能立刻 speak；
+ * Android / 微信 getVoices() 首次为空；部分内核 speak 不报错但永不 onstart。 */
 (function(){
   var btn = document.getElementById('speakEng');
   if(!btn) return;
+
+  var SILENT_WAV = 'data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+  var synth = null;
+  try { synth = (window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function') ? window.speechSynthesis : null; } catch(e){ synth = null; }
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var voices = [], unlocked = false, audioEl = null, tipEl = null, tipTimer = 0;
+
+  function loadVoices(){
+    if(!synth) return;
+    try { voices = synth.getVoices() || []; } catch(e){ voices = []; }
+  }
+  loadVoices();
+  if(synth){
+    try { synth.onvoiceschanged = loadVoices; } catch(e){}
+    try { synth.addEventListener && synth.addEventListener('voiceschanged', loadVoices); } catch(e){}
+  }
+
+  function pickVoice(){
+    loadVoices();
+    if(!voices.length) return null;
+    var i, v, lang, n;
+    for(i = 0; i < voices.length; i++){
+      v = voices[i]; lang = (v.lang||'').toLowerCase(); n = (v.name||'').toLowerCase();
+      if(lang.indexOf('en') === 0 && /zira|samantha|female|woman|aria|jenny|karen|moira|tessa|fiona/.test(n)) return v;
+    }
+    for(i = 0; i < voices.length; i++){
+      if((voices[i].lang||'').toLowerCase().indexOf('en') === 0) return voices[i];
+    }
+    return null;
+  }
+
+  function getAudio(){
+    if(audioEl) return audioEl;
+    try {
+      audioEl = new Audio();
+      audioEl.preload = 'auto';
+      audioEl.setAttribute('playsinline','');
+      audioEl.setAttribute('webkit-playsinline','');
+    } catch(e){ audioEl = null; }
+    return audioEl;
+  }
+  function primeAudio(){
+    var a = getAudio(); if(!a) return;
+    try {
+      a.muted = true; a.src = SILENT_WAV;
+      var p = a.play();
+      if(p && p.then) p.then(function(){ a.pause(); a.muted = false; })
+                       .catch(function(){ a.muted = false; });
+    } catch(e){ try { a.muted = false; } catch(e2){} }
+  }
+  function unlock(){
+    if(unlocked) return;
+    unlocked = true;
+    if(synth){
+      try {
+        var u = new SpeechSynthesisUtterance(' ');
+        u.volume = 0; u.rate = 10; u.lang = 'en-US';
+        synth.speak(u);
+      } catch(e){}
+    }
+    primeAudio();
+  }
+  if(document.addEventListener){
+    document.addEventListener('touchstart', unlock, { once:true, passive:true });
+    document.addEventListener('mousedown', unlock, { once:true });
+  }
+
+  function tip(msg, ms){
+    if(!tipEl){
+      tipEl = document.createElement('div');
+      tipEl.className = 'speak-tip';
+      document.body.appendChild(tipEl);
+    }
+    tipEl.textContent = msg;
+    tipEl.classList.add('show');
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(function(){ tipEl.classList.remove('show'); }, ms || 3200);
+  }
+  function mark(){ btn.classList.add('is-playing'); }
+  function unmark(){ btn.classList.remove('is-playing'); btn.classList.remove('is-net'); }
+
+  function netAudio(text){
+    mark();
+    var a = getAudio();
+    if(!a){ unmark(); tip('这个浏览器暂时读不了，跟着例句读一遍吧'); return; }
+    a.onplaying = function(){ btn.classList.add('is-net'); };
+    a.onended  = function(){ unmark(); };
+    a.onerror  = function(){
+      unmark();
+      tip(isIOS ? '读不出来：看看手机侧边静音键是不是打开了' : '这个浏览器不支持朗读，跟着例句读一遍吧');
+    };
+    try {
+      a.muted = false; a.pause();
+      a.src = 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
+      var p = a.play();
+      if(p && p.catch) p.catch(function(){ unmark(); tip('点一下再试一次（手机可能拦住了声音）'); });
+    } catch(e){ unmark(); tip('点一下再试一次（手机可能拦住了声音）'); }
+  }
+
+  function reallySpeak(text, st, fail){
+    var u;
+    try { u = new SpeechSynthesisUtterance(text); } catch(e){ return false; }
+    u.lang = 'en-US'; u.rate = 0.85; u.pitch = 1; u.volume = 1;
+    var v = pickVoice(); if(v) u.voice = v;
+    u.onstart = function(){ st.started = true; };
+    u.onend   = function(){ if(st.ended) return; st.ended = true; clearTimeout(st.tid); unmark(); };
+    u.onerror = function(){ unmark(); fail(); };
+    try { synth.speak(u); } catch(e){ return false; }
+    setTimeout(function(){ try { if(synth.paused) synth.resume(); } catch(e){} }, 150);
+    st.tid = setTimeout(function(){ if(!st.started && !st.ended){ unmark(); fail(); } }, 900);
+    return true;
+  }
+
+  function native(text, onFail){
+    var st = { started:false, ended:false, tid:0 };
+    function fail(){ if(st.ended) return; st.ended = true; clearTimeout(st.tid); onFail(); }
+    var busy = false;
+    try { busy = !!(synth.speaking || synth.pending || synth.paused); } catch(e){}
+    if(busy){
+      try { synth.cancel(); } catch(e){}
+      setTimeout(function(){ reallySpeak(text, st, fail); }, 90);
+      return true;
+    }
+    return reallySpeak(text, st, fail);
+  }
+
+  function speak(text){
+    if(!text) return;
+    unlock();
+    mark();
+    if(!synth){ netAudio(text); return; }
+    var ok = native(text, function(){ netAudio(text); });
+    if(!ok) netAudio(text);
+  }
+
   var text = 'need. want. I need water. I want a toy.';
-  btn.addEventListener('click', function(){
-    if(!window.speechSynthesis){ alert('你的浏览器不支持朗读功能'); return; }
-    window.speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = 0.9;
-    var voices = window.speechSynthesis.getVoices();
-    var en = voices.filter(function(v){ return v.lang.indexOf('en') === 0; });
-    var female = en.find(function(v){ return /female|samantha/i.test(v.name); });
-    if(female) u.voice = female;
-    else if(en.length) u.voice = en[0];
-    window.speechSynthesis.speak(u);
+  btn.addEventListener('click', function(){ speak(text); });
+
+  /* 点例句也能单独读 */
+  var box = document.getElementById('engBox');
+  if(box) box.addEventListener('click', function(ev){
+    var t = ev.target;
+    if(t === btn || (btn.contains && btn.contains(t))) return;
+    var p = t.closest ? t.closest('.en-line') : null;
+    if(!p) return;
+    var s = p.getAttribute('data-say');
+    if(s) speak(s);
   });
 })();
 </script>
