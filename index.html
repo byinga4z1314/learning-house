@@ -160,16 +160,16 @@
   .eng-word:active,.eng-sentence:active{opacity:.6;}
   .speak-btn{
     border:none;cursor:pointer;font-family:inherit;
-    width:44px;height:44px;border-radius:50%;flex-shrink:0;
-    background:#fff;color:var(--accent-deep);font-size:20px;
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:#ffe9d6;color:#e0651f;font-size:15px;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 2px 8px rgba(0,0,0,.10);
+    box-shadow:0 1px 4px rgba(224,101,31,.18);
     transition:transform .15s ease, background-color .15s ease;
   }
-  .speak-btn:hover{transform:scale(1.06);}
-  .speak-btn:active{transform:scale(.9);background:#ffe9da;}
+  .speak-btn:hover{transform:scale(1.05);}
+  .speak-btn:active{transform:scale(.92);background:#ffd9bd;}
   /* 朗读中：按钮高亮 + 呼吸光圈，让孩子知道"正在读" */
-  .speak-btn.is-playing{background:#ffd9c2;animation:spPulse 1.1s ease-in-out infinite;}
+  .speak-btn.is-playing{background:#ffc59b;animation:spPulse 1.1s ease-in-out infinite;}
   @keyframes spPulse{
     0%,100%{box-shadow:0 0 0 0 rgba(232,122,60,.50);}
     50%    {box-shadow:0 0 0 9px rgba(232,122,60,0);}
@@ -191,6 +191,72 @@
     transition:opacity .25s ease, transform .25s ease;
   }
   .speak-tip.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ===== 往日回顾 按钮 + 弹层 ===== */
+  .card-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .card-title-row .english-title{margin:0;}
+  .today-title{font-size:21px;font-weight:700;color:var(--ink);}
+  .review-btn{
+    border:1px solid var(--line);background:var(--page);color:var(--ink-soft);
+    font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    padding:4px 11px;border-radius:999px;flex-shrink:0;
+    transition:background-color .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .review-btn:hover{background:#fff;border-color:var(--accent);color:var(--accent-deep);}
+  .review-btn:active{transform:scale(.95);}
+
+  .review-mask{
+    position:fixed;inset:0;z-index:200;display:none;
+    background:rgba(60,45,35,.42);backdrop-filter:blur(2px);
+    align-items:flex-end;justify-content:center;
+  }
+  .review-mask.show{display:flex;animation:rmFade .2s ease;}
+  @keyframes rmFade{from{opacity:0;}to{opacity:1;}}
+  .review-sheet{
+    width:100%;max-width:680px;max-height:82vh;display:flex;flex-direction:column;
+    background:var(--page);border-radius:22px 22px 0 0;overflow:hidden;
+    box-shadow:0 -8px 30px rgba(0,0,0,.18);
+  }
+  .review-head{
+    position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding:16px 18px;background:linear-gradient(180deg,#fff,var(--page));
+    border-bottom:1px solid var(--line);
+  }
+  .review-head h3{margin:0;font-size:18px;color:var(--ink);}
+  .review-close{
+    border:none;background:#efe3d2;color:var(--ink-soft);font-size:20px;line-height:1;
+    width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;
+  }
+  .review-close:active{transform:scale(.92);}
+  .review-body{padding:6px 18px 26px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .review-week{margin-top:14px;}
+  .review-week-title{
+    font-size:14px;font-weight:700;color:var(--accent-deep);
+    background:#fff4ea;display:inline-block;padding:3px 12px;border-radius:999px;margin-bottom:8px;
+  }
+  .review-item{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:11px 13px;margin-bottom:10px;
+  }
+  .review-item + .review-item{margin-top:0;}
+  .review-item-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .review-day{font-size:13px;font-weight:700;color:var(--ink-soft);}
+  .review-type{
+    font-size:12px;font-weight:700;color:#fff;background:var(--accent);
+    padding:2px 8px;border-radius:999px;
+  }
+  .review-text{font-size:18px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .review-phon{font-size:14px;color:var(--ink-soft);font-weight:400;}
+  .review-zh{font-size:15px;color:var(--ink);margin-top:3px;}
+  .review-cn{font-size:14px;color:var(--ink-soft);margin-top:2px;line-height:1.6;}
+  .review-ex{font-size:14px;color:var(--ink-soft);margin-top:3px;line-height:1.6;}
+  .review-speak{width:30px;height:30px;font-size:13px;margin-left:auto;}
+  .review-ts-main{font-size:18px;font-weight:600;line-height:1.85;color:var(--ink);}
+  .review-ts-extra{font-size:15px;color:var(--ink-soft);margin-top:4px;line-height:1.7;}
+  .review-kid{font-size:13px;font-weight:700;color:#fff;border-radius:8px;padding:1px 10px;flex-shrink:0;}
+  .review-kid.yue{background:var(--yue);}
+  .review-kid.cheng{background:var(--cheng);}
+  .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
 
   /* ===== 今日一句话 + 每日打卡 ===== */
   .today-card{
@@ -476,12 +542,19 @@
 
     <!-- 每日英语（固定模块，位于今日一句话上方） -->
     <div class="english-card" id="englishCard">
-      <div class="english-title">每日英语</div>
+      <div class="card-title-row">
+        <div class="english-title">每日英语</div>
+        <button type="button" class="review-btn" id="reviewEnglish">往日回顾</button>
+      </div>
       <div id="englishBody"></div>
     </div>
 
     <!-- 今日一句话 + 每日打卡 -->
     <div class="today-card" id="todayCard">
+      <div class="card-title-row">
+        <div class="today-title">今日一句话</div>
+        <button type="button" class="review-btn" id="reviewSentence">往日回顾</button>
+      </div>
       <div class="today-date" id="todayDate"></div>
       <div id="sentenceCards"></div>
       <div id="streakArea"></div>
@@ -534,6 +607,17 @@
         <button type="button" class="welcome-btn cheng" data-user="chengcheng">👦<br>我是程程<br><span>五年级</span></button>
       </div>
       <p class="welcome-tip">选一次就好，以后会自动记住哦~</p>
+    </div>
+  </div>
+
+  <!-- 往日回顾 弹层 -->
+  <div class="review-mask" id="reviewMask" hidden>
+    <div class="review-sheet" role="dialog" aria-modal="true" aria-label="往日回顾">
+      <div class="review-head">
+        <h3 id="reviewTitle">往日回顾</h3>
+        <button type="button" class="review-close" id="reviewClose" aria-label="关闭">×</button>
+      </div>
+      <div class="review-body" id="reviewBody"></div>
     </div>
   </div>
 
@@ -1736,6 +1820,126 @@
   }
 
   /* ============================================================
+   * 往日回顾：按周整理已发布内容，底部弹层浏览
+   * 规则：按 data.json 的 english 周表 / 硬编码 WEEK_1~3 周表，
+   *       列出全部已发布周（当前周也在内，便于整体回看）；
+   *       尊重当前模式：一起看=两个孩子都列，单人模式=只列对应孩子。
+   * ============================================================ */
+  function escHtml(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function openReview(kind){
+    var mask = document.getElementById('reviewMask');
+    var title = document.getElementById('reviewTitle');
+    var body = document.getElementById('reviewBody');
+    if(!mask || !body) return;
+    if(kind === 'english'){
+      title.textContent = '每日英语 · 往日回顾';
+      body.innerHTML = buildEnglishReview();
+    } else {
+      title.textContent = '今日一句话 · 往日回顾';
+      body.innerHTML = buildSentenceReview();
+    }
+    mask.hidden = false;
+    requestAnimationFrame(function(){ mask.classList.add('show'); });
+    try { body.scrollTop = 0; } catch(e){}
+  }
+  function closeReview(){
+    var mask = document.getElementById('reviewMask');
+    if(!mask) return;
+    mask.classList.remove('show');
+    setTimeout(function(){ mask.hidden = true; }, 200);
+  }
+  function engReviewItemHTML(it, day, kid){
+    var t = it.type || 'word';
+    var typeName = { word:'单词', phrase:'短语', sentence:'句子' }[t] || '单词';
+    var dayName = ['周日','周一','周二','周三','周四','周五','周六'][day] || ('周'+day);
+    var hasEx = (t !== 'sentence') && it.en && it.en !== it.word;
+    var html = '<div class="review-item">';
+    html += '<div class="review-item-head">';
+    html += '<span class="review-kid ' + kid + '">' + KID_NAMES[kid] + '</span>';
+    html += '<span class="review-day">' + dayName + '</span>';
+    html += '<span class="review-type">' + typeName + '</span>';
+    html += '</div>';
+    html += '<div class="review-text">' + escHtml(it.word);
+    html += ' <button type="button" class="speak-btn review-speak" aria-label="朗读" data-word="' + escHtml(it.word) + '" data-sentence="' + escHtml(hasEx ? it.en : '') + '">🔊</button>';
+    html += '</div>';
+    if(it.phon) html += '<div class="review-phon">' + escHtml(it.phon) + '</div>';
+    if(it.zh) html += '<div class="review-zh">' + escHtml(it.zh) + '</div>';
+    if(hasEx || it.cn){
+      var ex = '';
+      if(it.en) ex += escHtml(it.en);
+      if(it.cn) ex += ' <span class="review-cn">' + escHtml(it.cn) + '</span>';
+      html += '<div class="review-ex">' + ex + '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+  function buildEnglishReview(){
+    var kids = visibleKids();
+    var weeks = ENGLISH_WEEKS || [];
+    if(!weeks.length) return '<div class="review-empty">暂时还没有往期英语素材～</div>';
+    var html = '';
+    weeks.forEach(function(wk, wi){
+      var hasAny = false;
+      kids.forEach(function(kid){
+        var kd = wk[kid] || {};
+        for(var d = 1; d <= 5; d++){ if(kd[d]) { hasAny = true; break; } }
+      });
+      if(!hasAny) return;
+      html += '<div class="review-week">';
+      html += '<div class="review-week-title">第' + (wk.week || (wi+1)) + '周（' + wk.start + ' ~ ' + wk.end + '）</div>';
+      kids.forEach(function(kid){
+        var kd = wk[kid] || {};
+        for(var d = 1; d <= 5; d++){
+          if(kd[d]) html += engReviewItemHTML(kd[d], d, kid);
+        }
+      });
+      html += '</div>';
+    });
+    if(!html) html = '<div class="review-empty">暂时还没有往期英语素材～</div>';
+    return html;
+  }
+  function sentenceReviewItemHTML(it, day, kid){
+    var html = '<div class="review-item">';
+    html += '<div class="review-item-head">';
+    html += '<span class="review-kid ' + kid + '">' + KID_NAMES[kid] + '</span>';
+    html += '<span class="review-day">' + (WEEKDAY_LABEL[day] || ('周'+day)) + '</span>';
+    html += '</div>';
+    html += '<div class="review-ts-main">' + it.main + '</div>';
+    if(it.extra) html += '<div class="review-ts-extra">' + it.extra + '</div>';
+    html += '</div>';
+    return html;
+  }
+  function buildSentenceReview(){
+    var kids = visibleKids();
+    var weeks = WEEKS || [];
+    if(!weeks.length) return '<div class="review-empty">暂时还没有往期一句话～</div>';
+    var dayOrder = [1,2,3,4,5,6,0];
+    var html = '';
+    weeks.forEach(function(wk, wi){
+      var hasAny = false;
+      kids.forEach(function(kid){
+        var kd = wk[kid] || {};
+        dayOrder.forEach(function(d){ if(kd[d] && kd[d].main) hasAny = true; });
+      });
+      if(!hasAny) return;
+      html += '<div class="review-week">';
+      html += '<div class="review-week-title">第' + (wi+1) + '周（' + wk.start + ' ~ ' + wk.end + '）</div>';
+      kids.forEach(function(kid){
+        var kd = wk[kid] || {};
+        dayOrder.forEach(function(d){
+          if(kd[d] && kd[d].main) html += sentenceReviewItemHTML(kd[d], d, kid);
+        });
+      });
+      html += '</div>';
+    });
+    if(!html) html = '<div class="review-empty">暂时还没有往期一句话～</div>';
+    return html;
+  }
+
+  /* ============================================================
    * 事件层
    * ============================================================ */
   function bindEvents(){
@@ -1854,6 +2058,28 @@
     if(vfClose) vfClose.addEventListener('click', function(){
       var tipBox = document.getElementById('videoFallback');
       if(tipBox) tipBox.hidden = true;
+    });
+
+    // 往日回顾：打开 / 关闭
+    var reviewEnglish = document.getElementById('reviewEnglish');
+    if(reviewEnglish) reviewEnglish.addEventListener('click', function(){ openReview('english'); });
+    var reviewSentence = document.getElementById('reviewSentence');
+    if(reviewSentence) reviewSentence.addEventListener('click', function(){ openReview('sentence'); });
+    var reviewClose = document.getElementById('reviewClose');
+    if(reviewClose) reviewClose.addEventListener('click', closeReview);
+    var reviewMask = document.getElementById('reviewMask');
+    if(reviewMask) reviewMask.addEventListener('click', function(ev){ if(ev.target === reviewMask) closeReview(); });
+    // 往日回顾里的朗读按钮（事件委托，弹层内容每次重建但容器不变）
+    var reviewBody = document.getElementById('reviewBody');
+    if(reviewBody) reviewBody.addEventListener('click', function(ev){
+      var btn = ev.target.closest ? ev.target.closest('.speak-btn') : null;
+      if(!btn) return;
+      var word = btn.getAttribute('data-word');
+      var sentence = btn.getAttribute('data-sentence');
+      if(word) Speaker.speakWordSentence(word, sentence, btn);
+    });
+    document.addEventListener('keydown', function(ev){
+      if(ev.key === 'Escape'){ var m = document.getElementById('reviewMask'); if(m && !m.hidden) closeReview(); }
     });
   }
 
