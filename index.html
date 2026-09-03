@@ -30,19 +30,16 @@
     font-size:18px;line-height:1.8;
     -webkit-font-smoothing:antialiased;
   }
-  .page{max-width:700px;margin:0 auto;}
+  .page{max-width:700px;margin:0 auto;position:relative;}
 
   /* ===== 1. 顶部标题 ===== */
-  header{text-align:center;padding:30px 8px 14px;}
+  header{text-align:center;padding:50px 8px 14px;position:relative;}
   header h1{font-size:32px;margin:0 0 4px;letter-spacing:1px;}
   header .sub{color:var(--ink-soft);font-size:18px;margin:0;}
   header .date-weather{
-    color:var(--ink-soft);font-size:15px;margin-top:8px;line-height:1.6;
-  }
-  header .stamp{
-    display:inline-block;margin-top:12px;padding:5px 18px;border-radius:999px;
-    background:var(--gold);color:#7a5a00;font-size:16px;font-weight:700;
-    box-shadow:0 3px 10px rgba(230,180,60,.25);
+    position:absolute;top:10px;right:4px;
+    color:var(--ink-soft);font-size:13px;line-height:1.5;text-align:right;
+    max-width:60%;
   }
 
   /* ===== 2. 模式切换 ===== */
@@ -527,18 +524,10 @@
 
   <!-- 1. 顶部标题 -->
   <header>
+    <div class="date-weather" id="dateWeather"></div>
     <h1>🏡 玥玥和程程的学习小屋</h1>
     <p class="sub">六年级 · 五年级 | 一起长大，一起学本领</p>
-    <div class="date-weather" id="dateWeather"></div>
-    <span class="stamp">2026学年 · 秋季学期</span>
   </header>
-
-  <!-- 2. 模式切换 -->
-  <div class="mode-switch" id="modeSwitch">
-    <button type="button" data-mode="all" class="active">一起看</button>
-    <button type="button" data-mode="yueyue" class="mode-yue">玥玥模式</button>
-    <button type="button" data-mode="chengcheng" class="mode-cheng">程程模式</button>
-  </div>
 
   <!-- 周六共读提示条 -->
   <div class="saturday-hint" id="saturdayHint" hidden>
@@ -619,6 +608,11 @@
 
   <!-- 10. 底部 -->
   <footer>
+    <div class="mode-switch" id="modeSwitch">
+      <button type="button" data-mode="all" class="active">一起看</button>
+      <button type="button" data-mode="yueyue" class="mode-yue">玥玥模式</button>
+      <button type="button" data-mode="chengcheng" class="mode-cheng">程程模式</button>
+    </div>
     <div class="encourage" id="encourage"></div>
     <div class="copy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
     <button type="button" class="reset-btn" id="resetIdentity">切换身份</button>
@@ -1041,7 +1035,7 @@
    * 渲染层：每个渲染函数只读数据、只写自己的 DOM，互相不调用
    * ============================================================ */
 
-  /* 顶部日期 + 天气（日期自动获取，天气暂时写死，可接API） */
+  /* 顶部日期 + 天气：日期自动获取；天气默认写死广州，允许后按定位实时更新 */
   function renderDateWeather(){
     var el = document.getElementById('dateWeather');
     if(!el) return;
@@ -1051,6 +1045,55 @@
           + now.getDate() + '日 ' + weekNames[now.getDay()]
           + ' | ' + WEATHER.city + ' ' + WEATHER.text + ' ' + WEATHER.temp;
     el.textContent = s;
+  }
+
+  /* WMO 天气代码 → 中文（Open-Meteo current_weather.weathercode） */
+  function weatherCodeToText(code){
+    code = parseInt(code, 10);
+    if(code === 0) return '晴';
+    if(code === 1) return '晴间多云';
+    if(code === 2) return '多云';
+    if(code === 3) return '阴';
+    if(code >= 45 && code <= 48) return '雾';
+    if(code >= 51 && code <= 57) return '毛毛雨';
+    if(code >= 61 && code <= 67) return '小雨';
+    if(code >= 71 && code <= 77) return '雪';
+    if(code >= 80 && code <= 82) return '阵雨';
+    if(code >= 85 && code <= 86) return '阵雪';
+    if(code >= 95) return '雷阵雨';
+    return '多云';
+  }
+
+  /* 定位 → 实时天气 + 城市：成功则更新，失败保留写死的广州兜底 */
+  function loadWeather(){
+    renderDateWeather();   // 先显示兜底（广州），定位回来再覆盖
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      // 1) 天气：Open-Meteo（免费、无需密钥）
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true', {cache:'no-cache'})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          if(j && j.current_weather){
+            WEATHER.temp = Math.round(j.current_weather.temperature) + '℃';
+            WEATHER.text = weatherCodeToText(j.current_weather.weathercode);
+          }
+        })
+        .catch(function(){})
+        .then(function(){
+          // 2) 城市：BigDataCloud 反向地理编码（免费、无需密钥）
+          return fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=zh', {cache:'no-cache'})
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(c){
+              if(c){
+                var city = c.city || c.locality || c.principalSubdivision;
+                if(city) WEATHER.city = city;
+              }
+            })
+            .catch(function(){});
+        })
+        .then(function(){ renderDateWeather(); });
+    }, function(){ /* 拒绝定位：保留兜底广州 */ }, { enableHighAccuracy:false, timeout:8000, maximumAge:600000 });
   }
 
   /* 底部鼓励语：随机一句 */
@@ -2146,7 +2189,7 @@
   function init(){
     bindEvents();
     applyTheme();
-    renderDateWeather();
+    loadWeather();   // 日期天气：默认广州兜底，允许定位后实时更新
     renderEncourage();
     var stored = getStoredUser();
     state.mode = modeFromUser(stored);
