@@ -325,13 +325,37 @@
   .check-item:hover{transform:scale(1.02);}
   .check-item:active{transform:scale(.98);}
   .check-item .ck-box{width:24px;height:24px;flex-shrink:0;cursor:pointer;accent-color:#43a047;}
-  /* 阅读打卡填的书名（打勾后才出现） */
-  .book-input{
-    flex:1 1 100%;margin-top:10px;padding:9px 12px;font-size:16px;font-family:inherit;
-    border:2px solid var(--line);border-radius:12px;background:#fffdf8;color:var(--ink);
-  }
-  .book-input:focus{outline:none;border-color:#ffb27a;}
   .check-item.done{border-color:#66bb6a;background:#e8f5e9;color:#2e7d32;}
+
+  /* ===== 阅读记录（升级版：书名/时长/评分/已读清单） ===== */
+  .readlog{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px;}
+  .readlog-block + .readlog-block{margin-top:16px;}
+  .readlog-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .readlog-head .rl-kid{font-size:14px;font-weight:700;color:#fff;border-radius:8px;padding:1px 10px;}
+  .readlog-head .rl-kid.yue{background:var(--yue);}
+  .readlog-head .rl-kid.cheng{background:var(--cheng);}
+  .readlog-head .rl-title{font-size:18px;font-weight:700;color:var(--ink);}
+  .readlog-summary{font-size:15px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6;}
+  .readlog-summary b{color:var(--accent-deep);}
+  .readlog-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fffdf8;border:1px solid var(--line);border-radius:14px;padding:10px 12px;}
+  .readlog-input{flex:1 1 140px;min-width:120px;padding:9px 12px;font-size:16px;font-family:inherit;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
+  .readlog-input:focus{outline:none;border-color:#ffb27a;}
+  .readlog-min{width:88px;padding:9px 10px;font-size:16px;font-family:inherit;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-align:center;}
+  .readlog-stars{display:flex;gap:2px;}
+  .readlog-star{border:none;background:none;font-size:24px;line-height:1;cursor:pointer;color:#e0c9a6;padding:2px;min-width:32px;min-height:32px;}
+  .readlog-star.on{color:#f6a623;}
+  .readlog-add{border:none;background:var(--accent-deep);color:#fff;font-size:16px;font-weight:700;font-family:inherit;padding:9px 18px;border-radius:12px;cursor:pointer;min-height:44px;}
+  .readlog-add:active{transform:scale(.97);}
+  .readlog-list{margin-top:12px;display:flex;flex-direction:column;gap:10px;}
+  .readlog-item{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;}
+  .readlog-item .ri-main{flex:1;min-width:0;}
+  .readlog-item .ri-title{font-size:17px;font-weight:700;line-height:1.5;}
+  .readlog-item .ri-meta{font-size:14px;color:var(--ink-soft);margin-top:2px;line-height:1.5;}
+  .readlog-item .ri-stars{color:#f6a623;font-size:15px;letter-spacing:1px;}
+  .readlog-item .ri-note{font-size:14px;color:var(--ink-soft);margin-top:3px;line-height:1.6;}
+  .readlog-item .ri-date{font-size:12px;color:#b6a690;margin-top:3px;}
+  .readlog-del{border:none;background:none;color:#c98;font-size:20px;cursor:pointer;padding:2px 6px;min-width:36px;min-height:36px;align-self:flex-start;}
+  .readlog-empty{font-size:14px;color:var(--ink-soft);padding:6px 2px;}
 
   /* 连续打卡天数提示（位于打卡区上方） */
   #streakArea{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
@@ -558,6 +582,7 @@
       <div id="sentenceCards"></div>
       <div id="streakArea"></div>
       <div class="check-row" id="checkRow"></div>
+      <div class="readlog" id="readLogArea"></div>
     </div>
   </section>
 
@@ -1123,16 +1148,16 @@
     }catch(e){ /* 隐私模式等存不了就只改界面 */ }
   }
 
-  /* 阅读打卡填的书名：按日期+孩子存 localStorage */
-  function lsBookKey(kid){ return 'wb_book_' + dateStr() + '_' + kid; }
-  function getBook(kid){
-    try{ return localStorage.getItem(lsBookKey(kid)) || ''; }catch(e){ return ''; }
+  /* === 阅读记录（升级版：书名/时长/评分/已读清单，存本地） === */
+  function getReadLog(){
+    try{ return JSON.parse(localStorage.getItem('wb_readlog') || '{}') || {}; }catch(e){ return {}; }
   }
-  function setBook(kid, val){
-    try{
-      if(val){ localStorage.setItem(lsBookKey(kid), val); }
-      else{ localStorage.removeItem(lsBookKey(kid)); }
-    }catch(e){}
+  function setReadLog(obj){
+    try{ localStorage.setItem('wb_readlog', JSON.stringify(obj)); }catch(e){}
+  }
+  function kidReadLog(kid){
+    var a = getReadLog()[kid];
+    return (a && a.length) ? a : [];
   }
 
   function visibleKids(){
@@ -1218,20 +1243,6 @@
     label.appendChild(input);
     label.appendChild(txt);
     wrap.appendChild(label);
-
-    // 阅读打卡：打勾后出现「今天读了什么书」输入框（可选）
-    if(kind === 'read'){
-      var book = document.createElement('input');
-      book.type = 'text';
-      book.className = 'book-input';
-      book.placeholder = '今天读了什么书？（可选）';
-      book.value = getBook(kid);
-      if(!done) book.hidden = true;
-      book.addEventListener('input', function(){ setBook(kid, book.value); });
-      // 点击输入框不触发 checkbox 切换
-      book.addEventListener('click', function(e){ e.stopPropagation(); });
-      wrap.appendChild(book);
-    }
     return wrap;
   }
 
@@ -1248,10 +1259,161 @@
         chip.textContent = KID_NAMES[kid];
         group.appendChild(chip);
       }
-      group.appendChild(makeCheck(kid, 'read', '📖 今日阅读 30分钟'));
+      // 阅读改为「阅读记录」模块（书名/时长/评分/已读清单），这里只保留运动打卡
       group.appendChild(makeCheck(kid, 'sport', '💪 今日运动 10分钟'));
       box.appendChild(group);
     });
+  }
+
+  /* 阅读记录连续天数：从今天往前数连续有阅读记录的天数 */
+  function readStreak(kid){
+    var days = {};
+    kidReadLog(kid).forEach(function(e){ if(e.date) days[e.date] = true; });
+    var d = new Date();
+    if(!days[dateStr(d)]){
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      if(!days[dateStr(y)]) return 0;
+    }
+    if(!days[dateStr(d)]) d.setDate(d.getDate() - 1);
+    var s = 0;
+    while(days[dateStr(d)]){ s++; d.setDate(d.getDate() - 1); }
+    return s;
+  }
+
+  function readLogBlock(kid){
+    var wrap = document.createElement('div');
+    wrap.className = 'readlog-block';
+
+    var head = document.createElement('div');
+    head.className = 'readlog-head';
+    if(state.mode === 'all'){
+      var kc = document.createElement('span');
+      kc.className = 'rl-kid ' + (kid === 'yueyue' ? 'yue' : 'cheng');
+      kc.textContent = KID_NAMES[kid];
+      head.appendChild(kc);
+    }
+    var ht = document.createElement('span');
+    ht.className = 'rl-title';
+    ht.textContent = '📚 阅读记录';
+    head.appendChild(ht);
+    wrap.appendChild(head);
+
+    // 今日小结
+    var today = kidReadLog(kid).filter(function(e){ return e.date === dateStr(); });
+    var todayMin = today.reduce(function(s, e){ return s + (parseInt(e.minutes, 10) || 0); }, 0);
+    if(today.length){
+      var sum = document.createElement('div');
+      sum.className = 'readlog-summary';
+      sum.innerHTML = '今天已读 <b>' + today.length + '</b> 本，共 <b>' + todayMin + '</b> 分钟 ✅';
+      wrap.appendChild(sum);
+    }
+
+    // 添加表单
+    var form = document.createElement('div');
+    form.className = 'readlog-form';
+    var titleIn = document.createElement('input');
+    titleIn.type = 'text'; titleIn.className = 'readlog-input';
+    titleIn.placeholder = '书名（今天读了什么）';
+    var minIn = document.createElement('input');
+    minIn.type = 'number'; minIn.className = 'readlog-min';
+    minIn.placeholder = '分钟'; minIn.min = '0'; minIn.setAttribute('inputmode', 'numeric');
+    var stars = document.createElement('div');
+    stars.className = 'readlog-stars';
+    var rating = 0, starBtns = [];
+    for(var i = 1; i <= 5; i++){
+      (function(n){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'readlog-star'; b.textContent = '★';
+        b.setAttribute('aria-label', n + '星');
+        b.addEventListener('click', function(){
+          rating = n;
+          starBtns.forEach(function(sb, idx){ sb.classList.toggle('on', idx < n); });
+        });
+        starBtns.push(b);
+        stars.appendChild(b);
+      })(i);
+    }
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button'; addBtn.className = 'readlog-add'; addBtn.textContent = '添加';
+    form.appendChild(titleIn);
+    form.appendChild(minIn);
+    form.appendChild(stars);
+    form.appendChild(addBtn);
+    wrap.appendChild(form);
+
+    addBtn.addEventListener('click', function(){
+      var title = titleIn.value.trim();
+      if(!title){ titleIn.focus(); return; }
+      var all = getReadLog();
+      all[kid] = all[kid] || [];
+      all[kid].push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        title: title,
+        minutes: parseInt(minIn.value, 10) || 0,
+        rating: rating,
+        date: dateStr()
+      });
+      setReadLog(all);
+      renderReadLog();
+      renderStreaks();
+    });
+
+    // 已读清单（新的在前）
+    var list = document.createElement('div');
+    list.className = 'readlog-list';
+    var arr = kidReadLog(kid).slice().sort(function(a, b){ return (b.date || '').localeCompare(a.date || ''); });
+    if(arr.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'readlog-empty';
+      empty.textContent = '还没有记录，读完一本书就来添加吧~';
+      list.appendChild(empty);
+    } else {
+      arr.forEach(function(e){
+        var item = document.createElement('div');
+        item.className = 'readlog-item';
+        var main = document.createElement('div');
+        main.className = 'ri-main';
+        var t = document.createElement('div');
+        t.className = 'ri-title'; t.textContent = e.title;
+        main.appendChild(t);
+        var parts = [];
+        if(e.minutes) parts.push(e.minutes + ' 分钟');
+        if(e.rating) parts.push('评分 ' + '★'.repeat(e.rating) + '☆'.repeat(5 - e.rating));
+        if(parts.length){
+          var meta = document.createElement('div');
+          meta.className = 'ri-meta'; meta.textContent = parts.join(' · ');
+          main.appendChild(meta);
+        }
+        var dt = document.createElement('div');
+        dt.className = 'ri-date'; dt.textContent = e.date;
+        main.appendChild(dt);
+        item.appendChild(main);
+        var del = document.createElement('button');
+        del.type = 'button'; del.className = 'readlog-del'; del.textContent = '×';
+        del.setAttribute('aria-label', '删除');
+        del.addEventListener('click', function(){
+          var all = getReadLog();
+          var a2 = all[kid] || [];
+          for(var j = a2.length - 1; j >= 0; j--){
+            if(a2[j].id === e.id){ a2.splice(j, 1); break; }
+          }
+          setReadLog(all);
+          renderReadLog();
+          renderStreaks();
+        });
+        item.appendChild(del);
+        list.appendChild(item);
+      });
+    }
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  function renderReadLog(){
+    var area = document.getElementById('readLogArea');
+    if(!area) return;
+    area.innerHTML = '';
+    visibleKids().forEach(function(kid){ area.appendChild(readLogBlock(kid)); });
   }
 
   /* 连续打卡天数：从今天往前数连续完成的天数（今天未打卡则从昨天起算） */
@@ -1278,7 +1440,7 @@
     var div = document.createElement('div');
     div.className = 'streak-line ' + (kid === 'yueyue' ? 'yue' : 'cheng');
     var label = kind === 'read' ? '阅读' : '运动';
-    var n = calcStreak(kid, kind);
+    var n = kind === 'read' ? readStreak(kid) : calcStreak(kid, kind);
     if(state.mode === 'all'){
       var chip = document.createElement('span');
       chip.className = 'kid-chip ' + (kid === 'yueyue' ? 'yue' : 'cheng');
@@ -1651,6 +1813,7 @@
     renderTodayDate();
     renderSentences();
     renderChecks();
+    renderReadLog();
   }
 
   function renderModeButtons(){
@@ -2121,11 +2284,6 @@
       setDone(kid, kind, input.checked);
       var item = input.closest('.check-item');
       if(item) item.classList.toggle('done', input.checked);
-      // 阅读打卡：打勾才显示书名输入框
-      if(kind === 'read'){
-        var book = item ? item.querySelector('.book-input') : null;
-        if(book) book.hidden = !input.checked;
-      }
       renderStreaks();   // 连续天数随打卡实时更新
     });
 
