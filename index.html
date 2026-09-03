@@ -256,7 +256,7 @@
   .review-kid.yue{background:var(--yue);}
   .review-kid.cheng{background:var(--cheng);}
   .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
-  /* 历史共学 · 往日回顾里的周次卡片 */
+  /* 共学主题 · 往日回顾里的周次卡片 */
   .review-history-item{
     display:flex;align-items:center;gap:12px;
     background:var(--card);border:1px solid var(--line);border-radius:14px;
@@ -2013,7 +2013,7 @@
     return html;
   }
 
-  /* 历史共学 · 往日回顾：列出全部共学周，点击进入对应周页面 */
+  /* 共学主题 · 往日回顾：列出全部共学周，点击进入对应周页面 */
   function buildHistoryReview(){
     var weeks = (data.weeks || []).slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
     var html = '';
@@ -2029,7 +2029,7 @@
       html += '<span class="rh-go">→</span>';
       html += '</a>';
     });
-    if(!html) html = '<div class="review-empty">暂时还没有历史共学内容～</div>';
+    if(!html) html = '<div class="review-empty">暂时还没有共学内容～</div>';
     return html;
   }
 
