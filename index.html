@@ -149,6 +149,7 @@
   .eng-block{padding:10px 0;}
   .eng-block + .eng-block{border-top:1px dashed var(--line);}
   .eng-word-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .eng-type{font-size:13px;font-weight:700;background:var(--accent);color:#fff;padding:3px 8px;border-radius:999px;vertical-align:middle;}
   .eng-word{font-size:26px;font-weight:700;color:var(--ink);}
   .eng-phon{font-size:16px;color:var(--ink-soft);}
   .eng-zh{font-size:18px;color:var(--ink);margin-top:4px;}
@@ -433,6 +434,8 @@
 </style>
 </head>
 <body>
+<!-- 朗读用音频元素：提前放在 DOM 里，手机浏览器第一次点击就能出声 -->
+<audio id="tts-audio" preload="auto" playsinline webkit-playsinline x5-playsinline style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></audio>
 <div class="page">
 
   <!-- 1. 顶部标题 -->
@@ -865,6 +868,7 @@
           if(Array.isArray(json.messages)) data.messages = json.messages;
           if(Array.isArray(json.weeks)) data.weeks = json.weeks;
           if(Array.isArray(json.videos)) data.videos = json.videos;
+          if(Array.isArray(json.english)) ENGLISH_WEEKS = json.english;
         }
         callback();
       })
@@ -1209,10 +1213,9 @@
       return null;
     }
 
-    /* --- 首次真实点击时"解锁"：iOS 必须同步 speak 一次，顺带解锁 audio --- */
+    /* --- 首次有效交互时"解锁"音频：点击 / 触摸都试，直到真正解锁成功 --- */
+    var audioPrimed = false;
     function unlock(){
-      if(unlocked) return;
-      unlocked = true;
       if(synth){
         try {
           var u = new SpeechSynthesisUtterance(' ');
@@ -1223,31 +1226,44 @@
       primeAudio();
     }
     function primeAudio(){
+      if(audioPrimed) return;
       var a = getAudio();
       if(!a) return;
       try {
         a.muted = true;
+        a.pause();
         a.src = SILENT_WAV;
+        a.load();
         var p = a.play();
-        if(p && p.then) p.then(function(){ a.pause(); a.muted = false; })
-                         .catch(function(){ a.muted = false; });
+        if(p && p.then){
+          p.then(function(){ try { a.pause(); } catch(e){} audioPrimed = true; a.muted = false; })
+           .catch(function(){ a.muted = false; });
+        } else {
+          audioPrimed = true;
+          a.muted = false;
+        }
       } catch(e){ try { a.muted = false; } catch(e2){} }
     }
     if(document.addEventListener){
-      document.addEventListener('touchstart', unlock, { once:true, passive:true });
-      document.addEventListener('mousedown', unlock, { once:true });
+      // 捕获阶段监听：按钮点击前先解锁
+      document.addEventListener('click', unlock, true);
+      document.addEventListener('touchstart', unlock, { passive:true });
     }
 
     function getAudio(){
       if(audioEl) return audioEl;
       try {
-        audioEl = document.createElement('audio');
-        audioEl.preload = 'auto';
-        audioEl.setAttribute('playsinline', '');
-        audioEl.setAttribute('webkit-playsinline', '');
-        audioEl.setAttribute('x5-playsinline', '');
-        audioEl.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
-        document.body.appendChild(audioEl);
+        audioEl = document.getElementById('tts-audio');
+        if(!audioEl){
+          audioEl = document.createElement('audio');
+          audioEl.id = 'tts-audio';
+          audioEl.preload = 'auto';
+          audioEl.setAttribute('playsinline', '');
+          audioEl.setAttribute('webkit-playsinline', '');
+          audioEl.setAttribute('x5-playsinline', '');
+          audioEl.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+          document.body.appendChild(audioEl);
+        }
       } catch(e){ audioEl = null; }
       return audioEl;
     }
@@ -1398,31 +1414,41 @@
         var ph = document.createElement('div');
         ph.className = 'eng-zh';
         ph.style.color = 'var(--ink-soft)';
-        ph.textContent = '本周英语单词整理中～';
+        ph.textContent = '本周英语素材整理中～';
         block.appendChild(ph);
         body.appendChild(block);
         return;
       }
+      var t = d.type || 'word';
+      var typeName = { word:'单词', phrase:'短语', sentence:'句子' }[t] || '单词';
       var wl = document.createElement('div');
       wl.className = 'eng-word-line';
+      var tag = document.createElement('span');
+      tag.className = 'eng-type'; tag.textContent = typeName;
       var w = document.createElement('span');
       w.className = 'eng-word'; w.textContent = d.word;
       var p = document.createElement('span');
-      p.className = 'eng-phon'; p.textContent = d.phon;
+      p.className = 'eng-phon'; p.textContent = d.phon || '';
       var sp = document.createElement('button');
       sp.type = 'button'; sp.className = 'speak-btn'; sp.textContent = '🔊';
       sp.setAttribute('data-word', d.word);
-      sp.setAttribute('data-sentence', d.en);
+      var hasEx = !!(d.en && String(d.en).trim() && d.en !== d.word);
+      sp.setAttribute('data-sentence', hasEx ? d.en : '');
       sp.setAttribute('aria-label', '朗读');
-      wl.appendChild(w); wl.appendChild(p); wl.appendChild(sp);
+      wl.appendChild(tag); wl.appendChild(w);
+      if(d.phon) wl.appendChild(p);
+      wl.appendChild(sp);
       var zh = document.createElement('div');
       zh.className = 'eng-zh'; zh.textContent = d.zh;
-      var s = document.createElement('div');
-      s.className = 'eng-sentence';
-      var enSpan = document.createElement('span'); enSpan.textContent = d.en;
-      var cnSpan = document.createElement('span'); cnSpan.className = 'cn'; cnSpan.textContent = ' ' + d.cn;
-      s.appendChild(enSpan); s.appendChild(cnSpan);
-      block.appendChild(wl); block.appendChild(zh); block.appendChild(s);
+      block.appendChild(wl); block.appendChild(zh);
+      if(hasEx && d.cn){
+        var s = document.createElement('div');
+        s.className = 'eng-sentence';
+        var enSpan = document.createElement('span'); enSpan.textContent = d.en;
+        var cnSpan = document.createElement('span'); cnSpan.className = 'cn'; cnSpan.textContent = ' ' + d.cn;
+        s.appendChild(enSpan); s.appendChild(cnSpan);
+        block.appendChild(s);
+      }
       body.appendChild(block);
     });
   }
