@@ -614,6 +614,15 @@
     overflow-wrap:break-word;word-break:break-word;
   }
   .rf-chip{white-space:nowrap;}
+  /* 日期查看器：点📅日期条展开，可选日期 + 玥玥/程程切换看对应一句话 */
+  .today-date{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .today-date:hover{color:var(--ink);}
+  .ts-date-pick{border:none;background:transparent;font-family:inherit;font-size:15px;color:var(--ink);cursor:pointer;padding:2px 4px;}
+  .ts-kid-btn{border:1px solid var(--line);background:var(--card);color:var(--ink);font-family:inherit;font-size:14px;padding:6px 14px;border-radius:999px;cursor:pointer;min-height:36px;}
+  .ts-kid-btn.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+  .ts-kid-btn.yue-btn.on{background:var(--yue);border-color:var(--yue);}
+  .ts-kid-btn.cheng-btn.on{background:var(--cheng);border-color:var(--cheng);}
+  .ts-date-reset{border:none;background:transparent;color:var(--accent);font-family:inherit;font-size:14px;cursor:pointer;text-decoration:underline;padding:6px 8px;min-height:36px;}
 
   @media (max-width:360px){
     body{padding:10px;}
@@ -680,6 +689,12 @@
         <button type="button" class="review-btn" id="reviewSentence">往日回顾</button>
       </div>
       <div class="today-date" id="todayDate"></div>
+      <div id="datePickerRow" hidden style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:-2px 0 10px;">
+        <input type="date" id="datePick" class="ts-date-pick" aria-label="选择要查看的日期">
+        <button type="button" id="dpKidYue" class="ts-kid-btn yue-btn">玥玥</button>
+        <button type="button" id="dpKidCheng" class="ts-kid-btn cheng-btn">程程</button>
+        <button type="button" id="datePickReset" class="ts-date-reset" hidden>回到今天</button>
+      </div>
       <div id="sentenceCards"></div>
       <div id="streakArea"></div>
       <div class="check-row" id="checkRow"></div>
