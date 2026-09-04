@@ -2473,7 +2473,7 @@
     return String(s == null ? '' : s)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function openReview(kind){
+    function openReview(kind){
     var mask = document.getElementById('reviewMask');
     var title = document.getElementById('reviewTitle');
     var body = document.getElementById('reviewBody');
@@ -2481,19 +2481,29 @@
     var input = document.getElementById('senSearch');
     var clear = document.getElementById('senSearchClear');
     if(!mask || !body) return;
+    currentReviewType = kind;
     if(kind === 'english'){
-      title.textContent = '每日英语 · 往日回顾';
-      body.innerHTML = buildEnglishReview();
-      if(wrap) wrap.hidden = true;
-    } else if(kind === 'history'){
-      title.textContent = '共学主题 · 往日回顾';
-      body.innerHTML = buildHistoryReview();
-      if(wrap) wrap.hidden = true;
-    } else {
-      sentenceFilter = '';   // 每次打开句子回顾从「全部」开始
-      senQuery = '';         // 清空上次搜索
+      engQuery = ''; engWeekFilter = '';
       if(input) input.value = '';
       if(clear) clear.hidden = true;
+      if(input) input.placeholder = '搜索单词、中文、例句...';
+      title.textContent = '每日英语 · 往日回顾';
+      body.innerHTML = buildEnglishReview();
+      if(wrap) wrap.hidden = false;
+    } else if(kind === 'history'){
+      histQuery = ''; histWeekFilter = '';
+      if(input) input.value = '';
+      if(clear) clear.hidden = true;
+      if(input) input.placeholder = '搜索共学主题、描述...';
+      title.textContent = '共学主题 · 往日回顾';
+      body.innerHTML = buildHistoryReview();
+      if(wrap) wrap.hidden = false;
+    } else {
+      sentenceFilter = '';
+      senQuery = '';
+      if(input) input.value = '';
+      if(clear) clear.hidden = true;
+      if(input) input.placeholder = '搜索一句话内容...';
       title.textContent = '今日一句话 · 往日回顾';
       body.innerHTML = buildSentenceReview();
       if(wrap) wrap.hidden = false;
@@ -2533,16 +2543,17 @@
     html += '</div>';
     return html;
   }
-  function buildEnglishReview(){
+    function buildEnglishReview(){
     var kids = visibleKids();
     var weeks = ENGLISH_WEEKS || [];
     if(!weeks.length) return '<div class="review-empty">暂时还没有往期英语素材～</div>';
-    var html = '';
+    var html = weekFilterBar('english', weeks);
+    var matched = 0;
     weeks.forEach(function(wk, wi){
       var hasAny = false;
       kids.forEach(function(kid){
         var kd = wk[kid] || {};
-        for(var d = 1; d <= 5; d++){ if(kd[d]) { hasAny = true; break; } }
+        for(var d = 1; d <= 5; d++){ if(kd[d] && englishPass(kd[d], wk, wi)) { hasAny = true; matched++; break; } }
       });
       if(!hasAny) return;
       html += '<div class="review-week">';
@@ -2550,12 +2561,17 @@
       kids.forEach(function(kid){
         var kd = wk[kid] || {};
         for(var d = 1; d <= 5; d++){
-          if(kd[d]) html += engReviewItemHTML(kd[d], d, kid);
+          if(kd[d] && englishPass(kd[d], wk, wi)) html += engReviewItemHTML(kd[d], d, kid);
         }
       });
       html += '</div>';
     });
-    if(!html) html = '<div class="review-empty">暂时还没有往期英语素材～</div>';
+    if(!matched){
+      html = weekFilterBar('english', weeks)
+        + (engQuery
+            ? '<div class="review-empty">没找到和「' + escHtml(engQuery) + '」相关的英语内容～换个词试试</div>'
+            : '<div class="review-empty">这个周次还没有英语内容～</div>');
+    }
     return html;
   }
   function sentenceReviewItemHTML(it, dateS, kid){
@@ -2571,6 +2587,49 @@
     html += '</div>';
     return html;
   }
+
+  /* ===== 往日回顾：英语/共学 搜索 + 周次筛选 ===== */
+  var currentReviewType = 'sentence';  // 当前打开的回顾类型
+  var engQuery = '';       // 英语搜索词
+  var histQuery = '';      // 共学搜索词
+  var engWeekFilter = '';  // 英语周次筛选 ''=全部
+  var histWeekFilter = ''; // 共学周次筛选 ''=全部
+
+  /* 英语：一条内容是否通过搜索 + 周次筛选 */
+  function englishPass(it, wk, wi){
+    if(!it) return false;
+    if(engWeekFilter && String(wk.week || (wi+1)) !== engWeekFilter) return false;
+    if(engQuery){
+      var q = engQuery.toLowerCase();
+      var hay = (it.word + ' ' + (it.zh||'') + ' ' + (it.en||'') + ' ' + (it.cn||'') + ' ' + (it.phon||'')).toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  }
+
+  /* 共学：一条内容是否通过搜索 + 周次筛选 */
+  function historyPass(w){
+    if(!w) return false;
+    if(histWeekFilter && String(w.week || 0) !== histWeekFilter) return false;
+    if(histQuery){
+      var q = histQuery.toLowerCase();
+      var hay = ((w.title||'') + ' ' + (w.desc||'')).toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  }
+
+  /* 周次筛选条（英语和共学通用） */
+  function weekFilterBar(type, weeks){
+    var filter = type === 'english' ? engWeekFilter : histWeekFilter;
+    var chips = '<button type="button" class="rf-chip' + (filter === '' ? ' on' : '') + '" data-weekfilter="' + type + '" data-week="">全部周次</button>';
+    weeks.forEach(function(w, i){
+      var wn = w.week || (i+1);
+      chips += '<button type="button" class="rf-chip' + (filter === String(wn) ? ' on' : '') + '" data-weekfilter="' + type + '" data-week="' + wn + '">第' + wn + '周</button>';
+    });
+    return '<div class="review-filter">' + chips + '</div>';
+  }
+
   /* 往日回顾「今日一句话」：按 SENT_SCHED 列表 + 主题筛选 + 正文搜索 */
   var sentenceFilter = '';   // '' = 全部主题
   var senQuery = '';         // '' = 不限，非空 = 搜正文关键词
@@ -2638,11 +2697,14 @@
   }
 
   /* 共学主题 · 往日回顾：列出全部共学周，点击进入对应周页面 */
-  function buildHistoryReview(){
+    function buildHistoryReview(){
     var weeks = (data.weeks || []).slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
-    var html = '';
+    var html = weekFilterBar('history', weeks);
+    var matched = 0;
     weeks.forEach(function(w){
       if(!matchMode(w.owner || 'both')) return;
+      if(!historyPass(w)) return;
+      matched++;
       var href = (w.file || ('week-' + pad(w.week) + '.html')) + '?v=20260903';
       html += '<a class="review-history-item" href="' + escHtml(href) + '">';
       html += '<span class="rh-num">第' + (w.week || 0) + '周</span>';
@@ -2653,7 +2715,12 @@
       html += '<span class="rh-go">→</span>';
       html += '</a>';
     });
-    if(!html) html = '<div class="review-empty">暂时还没有共学内容～</div>';
+    if(!matched){
+      html = weekFilterBar('history', weeks)
+        + (histQuery
+            ? '<div class="review-empty">没找到和「' + escHtml(histQuery) + '」相关的共学内容～换个词试试</div>'
+            : '<div class="review-empty">这个周次还没有共学内容～</div>');
+    }
     return html;
   }
 
@@ -2956,14 +3023,23 @@
     var reviewMask = document.getElementById('reviewMask');
     if(reviewMask) reviewMask.addEventListener('click', function(ev){ if(ev.target === reviewMask) closeReview(); });
     // 往日回顾里的朗读按钮 / 主题筛选 chip（事件委托，弹层内容每次重建但容器不变）
-    var reviewBody = document.getElementById('reviewBody');
+        var reviewBody = document.getElementById('reviewBody');
     if(reviewBody) reviewBody.addEventListener('click', function(ev){
       var t = ev.target;
       if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
       var chip = t.closest ? t.closest('.rf-chip') : null;
       if(chip){
-        sentenceFilter = chip.getAttribute('data-topic') || '';
-        reviewBody.innerHTML = buildSentenceReview();
+        var wf = chip.getAttribute('data-weekfilter');
+        if(wf){
+          // 周次筛选（英语/共学）
+          var wk = chip.getAttribute('data-week') || '';
+          if(wf === 'english'){ engWeekFilter = wk; reviewBody.innerHTML = buildEnglishReview(); }
+          else if(wf === 'history'){ histWeekFilter = wk; reviewBody.innerHTML = buildHistoryReview(); }
+        } else {
+          // 主题筛选（今日一句话）
+          sentenceFilter = chip.getAttribute('data-topic') || '';
+          reviewBody.innerHTML = buildSentenceReview();
+        }
         try { reviewBody.scrollTop = 0; } catch(e){}
         return;
       }
@@ -2974,27 +3050,36 @@
       if(word) Speaker.speakWordSentence(word, sentence, btn);
     });
 
-    // 往日回顾「今日一句话」正文搜索：输入防抖 → 更新 senQuery → 重建列表
+        // 往日回顾搜索：根据当前回顾类型搜索对应内容
     var senSearch = document.getElementById('senSearch');
     var senSearchClear = document.getElementById('senSearchClear');
     if(senSearch){
       var senDebounce = null;
-      var applySenSearch = function(){
-        senQuery = senSearch.value.trim();
-        if(senSearchClear) senSearchClear.hidden = !senQuery;
+      var applySearch = function(){
+        var q = senSearch.value.trim();
+        if(senSearchClear) senSearchClear.hidden = !q;
         var body = document.getElementById('reviewBody');
-        if(body) body.innerHTML = buildSentenceReview();
+        if(currentReviewType === 'english'){
+          engQuery = q;
+          if(body) body.innerHTML = buildEnglishReview();
+        } else if(currentReviewType === 'history'){
+          histQuery = q;
+          if(body) body.innerHTML = buildHistoryReview();
+        } else {
+          senQuery = q;
+          if(body) body.innerHTML = buildSentenceReview();
+        }
         try { if(body) body.scrollTop = 0; } catch(e){}
       };
       senSearch.addEventListener('input', function(){
         if(senDebounce) clearTimeout(senDebounce);
-        senDebounce = setTimeout(applySenSearch, 200);
+        senDebounce = setTimeout(applySearch, 200);
       });
-      senSearch.addEventListener('search', applySenSearch);  // 兼容自带清空X
+      senSearch.addEventListener('search', applySearch);
       if(senSearchClear) senSearchClear.addEventListener('click', function(){
         senSearch.value = '';
         if(senDebounce) clearTimeout(senDebounce);
-        applySenSearch();
+        applySearch();
         senSearch.focus();
       });
     }
