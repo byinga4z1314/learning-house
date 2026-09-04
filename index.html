@@ -1279,8 +1279,8 @@
     }
   };
   var ENGLISH_WEEKS = [
-    { start: '2026-09-01', end: '2026-09-06', yueyue: {}, chengcheng: {} },
     { start: '2026-09-07', end: '2026-09-13', yueyue: ENGLISH_WEEK_1.yueyue, chengcheng: ENGLISH_WEEK_1.chengcheng },
+    { start: '2026-09-01', end: '2026-09-06', yueyue: {}, chengcheng: {} },
     { start: '2026-09-14', end: '2026-09-20', yueyue: {}, chengcheng: {} },
     { start: '2026-09-21', end: '2026-09-27', yueyue: {}, chengcheng: {} }
   ];
@@ -1305,9 +1305,9 @@
     formLinks: {},
     messages: [],   // {id, owner:'yueyue'|'chengcheng', text, date, status:'待处理'|'已回复'}
     weeks: [
-      { week:2, title:'需要vs想要', file:'week-01.html', owner:'both', desc:'财商启蒙，和本周每日英语 need/want 呼应' },
-      { week:3, title:'情绪管理', file:'week-02.html', owner:'both', desc:'做自己心情的小主人，情绪识别+愤怒管理+表达感受' },
-      { week:4, title:'时间管理', file:'week-03.html', owner:'both', desc:'把一天变成够用的一天，拖延+专注+要事第一' }
+      { week:1, title:'需要vs想要', file:'week-01.html', owner:'both', desc:'财商启蒙，和本周每日英语 need/want 呼应' },
+      { week:2, title:'情绪管理', file:'week-02.html', owner:'both', desc:'做自己心情的小主人，情绪识别+愤怒管理+表达感受' },
+      { week:3, title:'时间管理', file:'week-03.html', owner:'both', desc:'把一天变成够用的一天，拖延+专注+要事第一' }
     ],      // {week:1, title, file:'week-01.html', owner:'both'|'yueyue'|'chengcheng'}
     videos: [
       { id:'v20260902', title:'五步教你马伯庸日记法', url:'https://v.douyin.com/imOcqj4sbJE/', date:'2026-09-02', owner:'both', desc:'作家马伯庸的写日记小妙招' },
@@ -1527,7 +1527,7 @@
     for(var i = 0; i < SENT_SCHED.length; i++){
       if(dateS >= SENT_SCHED[i].start && dateS <= SENT_SCHED[i].end){ pick = SENT_SCHED[i]; break; }
     }
-    if(!pick) pick = (dateS < SENT_SCHED[0].start) ? SENT_SCHED[0] : SENT_SCHED[SENT_SCHED.length - 1];
+    if(!pick){ if(dateS < '2026-09-01') return { week:null, item:null, beforeLaunch:true }; pick = SENT_SCHED[SENT_SCHED.length - 1]; }
     var item = (pick[kid] && pick[kid][dateS]) ? pick[kid][dateS] : null;
     return { week: pick, item: item };
   }
@@ -1571,6 +1571,21 @@
     var kids = sentViewKid ? [sentViewKid] : visibleKids();
     kids.forEach(function(kid){
       var res = sentLookup(kid, viewDate);
+      if(res && res.beforeLaunch){
+        var cardBL = document.createElement('div');
+        cardBL.className = 'ts-card';
+        var labelBL = document.createElement('div');
+        labelBL.className = 'ts-label';
+        labelBL.textContent = '📅 历史一句话';
+        cardBL.appendChild(labelBL);
+        var phBL = document.createElement('div');
+        phBL.className = 'ts-main';
+        phBL.style.color = 'var(--ink-soft)';
+        phBL.textContent = '学习小屋 2026年9月1日上线，这一天还没有数据哦~';
+        cardBL.appendChild(phBL);
+        box.appendChild(cardBL);
+        return;
+      }
       var dayData = (res && res.item) ? res.item : sentFallback(kid, viewDate);
       var isFallback = !(res && res.item);
       var card = document.createElement('div');
