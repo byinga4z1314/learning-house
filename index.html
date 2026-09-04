@@ -2668,7 +2668,9 @@
     if(!weeks.length) return '<div class="review-empty">暂时还没有往期英语素材～</div>';
     var html = weekFilterBar('english', weeks);
     var matched = 0;
+    var today = dateStr();
     weeks.forEach(function(wk, wi){
+      if(wk.start > today) return;
       var hasAny = false;
       kids.forEach(function(kid){
         var kd = wk[kid] || {};
@@ -2783,11 +2785,13 @@
     if(!weeks.length) return '<div class="review-empty">暂时还没有往期一句话～</div>';
     var html = sentenceFilterBar();
     var matched = 0;
+    var today = dateStr();
     weeks.forEach(function(wk, wi){
       var hasAny = false;
       kids.forEach(function(kid){
         var per = wk[kid] || {};
         Object.keys(per).forEach(function(d){
+          if(d > today) return;
           var it = per[d];
           if(sentencePass(it)){ hasAny = true; matched++; }
         });
@@ -2800,6 +2804,7 @@
         var per = wk[kid] || {};
         var dates = Object.keys(per).sort();
         dates.forEach(function(d){
+          if(d > today) return;
           var it = per[d];
           if(sentencePass(it)) html += sentenceReviewItemHTML(it, d, kid);
         });
@@ -2820,7 +2825,10 @@
     var weeks = (data.weeks || []).slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
     var html = weekFilterBar('history', weeks);
     var matched = 0;
+    var today = dateStr();
+    var week1Start = new Date(2026, 8, 1); var dayDiff = Math.floor((new Date() - week1Start) / 86400000); var currentWeekNo = Math.floor(dayDiff / 7) + 1;
     weeks.forEach(function(w){
+      if((w.week || 0) > currentWeekNo) return;
       if(!matchMode(w.owner || 'both')) return;
       if(!historyPass(w)) return;
       matched++;
