@@ -2492,7 +2492,6 @@
   function sentenceFilterBar(){
     var chips = '<button type="button" class="rf-chip' + (sentenceFilter === '' ? ' on' : '') + '" data-topic="">全部</button>';
     TOPICS.forEach(function(t){
-      if(!topicSeen(t.id)) return;
       var short = TOPIC_SHORT[t.id] || t.name;
       chips += '<button type="button" class="rf-chip' + (sentenceFilter === t.id ? ' on' : '') + '" data-topic="' + t.id + '" title="' + t.icon + ' ' + t.name + '">' + t.icon + ' ' + short + '</button>';
     });
