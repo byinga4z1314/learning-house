@@ -218,7 +218,8 @@
   .review-mask.show{display:flex;animation:rmFade .2s ease;}
   @keyframes rmFade{from{opacity:0;}to{opacity:1;}}
   .review-sheet{
-    width:100%;max-width:680px;max-height:82vh;display:flex;flex-direction:column;
+    width:100%;max-width:680px;min-height:200px;max-height:82vh;
+    display:flex;flex-direction:column;
     background:var(--page);border-radius:22px 22px 0 0;overflow:hidden;
     box-shadow:0 -8px 30px rgba(0,0,0,.18);
   }
@@ -233,7 +234,7 @@
     width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;
   }
   .review-close:active{transform:scale(.92);}
-  .review-body{padding:6px 18px 26px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .review-body{padding:6px 18px 26px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:0 1 auto;min-height:0;}
   .review-week{margin-top:14px;}
   .review-week-title{
     font-size:14px;font-weight:700;color:var(--accent-deep);
@@ -261,11 +262,11 @@
   .review-kid{font-size:13px;font-weight:700;color:#fff;border-radius:8px;padding:1px 10px;flex-shrink:0;}
   .review-kid.yue{background:var(--yue);}
   .review-kid.cheng{background:var(--cheng);}
-  .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
+  .review-empty{text-align:center;color:var(--ink-soft);padding:14px 0;}
   /* 今日一句话回顾 · 搜索条（仅 sentence 回顾显示，置于标题下、滚动内容外） */
   .sen-search-wrap{
     display:flex;align-items:center;gap:8px;flex-shrink:0;
-    margin:2px 18px 10px;padding:2px 12px 2px 10px;
+    margin:0 18px 8px;padding:4px 12px 4px 10px;
     background:var(--card);border:1px solid var(--line);border-radius:999px;
   }
   .sen-search-wrap[hidden]{display:none;}
