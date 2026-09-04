@@ -2,3 +2,6 @@
 Cloudflare/
 *.tmp
 *.log
+index_副本.html
+*.bak
+*_备份.html
