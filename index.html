@@ -2430,12 +2430,26 @@
     var currentBox = document.getElementById('currentWeek');
     currentBox.innerHTML = '';
 
-    var weeks = data.weeks.slice().sort(function(a, b){ return (b.week || 0) - (a.week || 0); });
+    var weeks = data.weeks.slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
 
-    // 本周共学：取周数最大、且在当前模式下可见的一条
+    // 本周共学：按日期计算当前周次（第1周周一=2026-09-07），找不到对应周则显示最近的
+    var week1Monday = new Date(2026, 8, 7); // 2026-09-07
+    var today = new Date();
+    var dayDiff = Math.floor((today - week1Monday) / (1000*60*60*24));
+    var currentWeekNo = Math.floor(dayDiff / 7) + 1;
+    if(currentWeekNo < 1) currentWeekNo = 1;
     var current = null;
-    for(var i = 0; i < weeks.length; i++){
-      if(matchMode(weeks[i].owner || 'both')){ current = weeks[i]; break; }
+    for(var wi = 0; wi < weeks.length; wi++){
+      if((weeks[wi].week || 0) === currentWeekNo && matchMode(weeks[wi].owner || 'both')){ current = weeks[wi]; break; }
+    }
+    if(!current){
+      var closest = null, closestDiff = Infinity;
+      for(var wi = 0; wi < weeks.length; wi++){
+        if(!matchMode(weeks[wi].owner || 'both')) continue;
+        var diff = Math.abs((weeks[wi].week || 0) - currentWeekNo);
+        if(diff < closestDiff){ closestDiff = diff; closest = weeks[wi]; }
+      }
+      current = closest;
     }
 
     if(current){
