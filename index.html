@@ -2216,7 +2216,7 @@
     var body = document.getElementById('englishBody');
     if(!card || !body) return;
     var day = new Date().getDay();
-    if(day === 0 || day === 6){ card.hidden = true; return; }
+    var isWeekend = (day === 0 || day === 6);
     card.hidden = false;
     body.innerHTML = '';
     var week = currentEnglishWeek();
@@ -2233,11 +2233,36 @@
         block.appendChild(chipLine);
       }
       if(!d){
-        var ph = document.createElement('div');
-        ph.className = 'eng-zh';
-        ph.style.color = 'var(--ink-soft)';
-        ph.textContent = '本周英语素材整理中～';
-        block.appendChild(ph);
+        if(isWeekend && week[kid]){
+          var revTag = document.createElement('div');
+          revTag.className = 'eng-zh';
+          revTag.style.fontWeight = '700';
+          revTag.style.color = 'var(--accent-deep)';
+          revTag.textContent = '本周单词复习';
+          block.appendChild(revTag);
+          for(var rd = 1; rd <= 5; rd++){
+            var ritem = week[kid][rd];
+            if(!ritem) continue;
+            var rline = document.createElement('div');
+            rline.style.margin = '6px 0';
+            rline.style.fontSize = '16px';
+            var rw = document.createElement('span');
+            rw.style.fontWeight = '700';
+            rw.textContent = ritem.word + ' ';
+            var rz = document.createElement('span');
+            rz.style.color = 'var(--ink-soft)';
+            rz.textContent = ritem.zh || '';
+            rline.appendChild(rw);
+            rline.appendChild(rz);
+            block.appendChild(rline);
+          }
+        } else {
+          var ph = document.createElement('div');
+          ph.className = 'eng-zh';
+          ph.style.color = 'var(--ink-soft)';
+          ph.textContent = '本周英语素材整理中～';
+          block.appendChild(ph);
+        }
         body.appendChild(block);
         return;
       }
