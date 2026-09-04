@@ -394,6 +394,11 @@
 
   /* 连续打卡天数提示（位于打卡区上方） */
   #streakArea{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .week-summary{display:flex;gap:10px;margin-top:12px;padding:10px 12px;background:var(--yue-bg);border-radius:12px;flex-wrap:wrap;justify-content:center;}
+  .week-summary .ws-item{text-align:center;flex:1;min-width:70px;}
+  .week-summary .ws-num{font-size:22px;font-weight:700;color:var(--accent-deep);}
+  .week-summary .ws-label{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .week-summary .ws-title{width:100%;text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:4px;}
   .streak-line{
     display:flex;align-items:center;gap:10px;
     background:#fff7ec;border:1px solid #ffe2bd;border-radius:14px;
@@ -699,6 +704,7 @@
       </div>
       <div id="sentenceCards"></div>
       <div id="streakArea"></div>
+      <div class="week-summary" id="weekSummary"></div>
       <div class="check-row" id="checkRow"></div>
       <div class="readlog" id="readLogArea"></div>
     </div>
@@ -1416,10 +1422,10 @@
     if(sentViewDate){
       var parts = sentViewDate.split('-');
       var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-      el.textContent = '📅 ' + (d.getMonth()+1) + '月' + d.getDate() + '日 · ' + wn[d.getDay()] + ' · 查看历史';
+      el.textContent = '📅 ' + (d.getMonth()+1) + '月' + d.getDate() + '日 · ' + wn[d.getDay()] + ' · 查看历史 ▾';
     }else{
       var now = new Date();
-      el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()];
+      el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()] + ' ▾';
     }
     el.title = '点击选择日期查看历史一句话';
   }
@@ -1612,6 +1618,10 @@
     var minIn = document.createElement('input');
     minIn.type = 'number'; minIn.className = 'readlog-min';
     minIn.placeholder = '分钟'; minIn.min = '0'; minIn.setAttribute('inputmode', 'numeric');
+    var starLabel = document.createElement('span');
+    starLabel.className = 'readlog-star-label';
+    starLabel.textContent = '满意度';
+    starLabel.style.cssText = 'font-size:13px;color:var(--ink-soft);margin-right:6px;align-self:center;';
     var stars = document.createElement('div');
     stars.className = 'readlog-stars';
     var rating = 0, starBtns = [];
@@ -1632,6 +1642,7 @@
     addBtn.type = 'button'; addBtn.className = 'readlog-add'; addBtn.textContent = '添加';
     form.appendChild(titleIn);
     form.appendChild(minIn);
+    form.appendChild(starLabel);
     form.appendChild(stars);
     form.appendChild(addBtn);
     wrap.appendChild(form);
@@ -1651,6 +1662,7 @@
       setReadLog(all);
       renderReadLog();
       renderStreaks();
+    renderWeekSummary();
     });
 
     // 已读清单（新的在前）
@@ -1695,6 +1707,7 @@
           setReadLog(all);
           renderReadLog();
           renderStreaks();
+    renderWeekSummary();
         });
         item.appendChild(del);
         list.appendChild(item);
@@ -1744,7 +1757,11 @@
     }
     var t = document.createElement('span');
     t.className = 'streak-text';
-    t.innerHTML = '你已经连续' + label + ' <b>' + n + '</b> 天啦！' + (streakMsg(n) ? ' ' + streakMsg(n) : '');
+    if(kind === 'read' && n === 0){
+        t.innerHTML = '📖 今天还没阅读记录，去下面添加一本书吧~ 连续阅读从今天开始';
+      }else{
+        t.innerHTML = '你已经连续' + label + ' <b>' + n + '</b> 天啦！' + (streakMsg(n) ? ' ' + streakMsg(n) : '') + (kind === 'read' ? ' <span style="font-size:13px;color:var(--ink-soft);">（添加阅读记录自动累计）</span>' : '');
+      }
     div.appendChild(t);
     return div;
   }
@@ -1756,6 +1773,54 @@
     visibleKids().forEach(function(kid){
       area.appendChild(streakBlock(kid, 'read'));
       area.appendChild(streakBlock(kid, 'sport'));
+    });
+  }
+  /* 本周学习概览：统计本周阅读天数、运动天数、阅读总分钟 */
+  function getWeekStart(){
+    var d = new Date();
+    var day = d.getDay() || 7;
+    d.setDate(d.getDate() - (day - 1));
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function renderWeekSummary(){
+    var box = document.getElementById('weekSummary');
+    if(!box) return;
+    box.innerHTML = '';
+    var weekStart = getWeekStart();
+    var wsStr = dateStr(weekStart);
+    var today = dateStr();
+    visibleKids().forEach(function(kid){
+      var readDays = {}, readMin = 0;
+      kidReadLog(kid).forEach(function(e){
+        if(e.date && e.date >= wsStr && e.date <= today){
+          readDays[e.date] = true;
+          readMin += parseInt(e.minutes, 10) || 0;
+        }
+      });
+      var sportDays = 0;
+      var d = new Date(weekStart);
+      while(dateStr(d) <= today){
+        if(isDoneOn(kid, 'sport', dateStr(d))) sportDays++;
+        d.setDate(d.getDate() + 1);
+      }
+      if(state.mode !== 'all'){
+        var title = document.createElement('div');
+        title.className = 'ws-title';
+        title.textContent = '📊 本周学习概览';
+        box.appendChild(title);
+      }
+      var items = [
+        { num: Object.keys(readDays).length, label: '阅读天数' },
+        { num: readMin, label: '阅读分钟' },
+        { num: sportDays, label: '运动天数' }
+      ];
+      items.forEach(function(it){
+        var el = document.createElement('div');
+        el.className = 'ws-item';
+        el.innerHTML = '<div class="ws-num">' + it.num + '</div><div class="ws-label">' + it.label + '</div>';
+        box.appendChild(el);
+      });
     });
   }
 
@@ -2378,6 +2443,7 @@
     renderEnglish();
     renderTodaySection();
     renderStreaks();
+    renderWeekSummary();
     renderTodo();
     renderFormLinks();
     renderWeeks();
@@ -2843,7 +2909,12 @@
       setDone(kid, kind, input.checked);
       var item = input.closest('.check-item');
       if(item) item.classList.toggle('done', input.checked);
-      renderStreaks();   // 连续天数随打卡实时更新
+      renderStreaks();
+    renderWeekSummary();
+      if(input.checked && typeof Speaker !== 'undefined'){
+        var msgs = ['太棒了！继续保持~', '做得好！一天天进步~', '厉害！又完成一项~', '加油！你真棒~'];
+        Speaker.tip(msgs[Math.floor(Math.random() * msgs.length)]);
+      }
     });
 
     // 视频链接：微信 / 手机浏览器偶尔会拦掉新窗口跳转，
