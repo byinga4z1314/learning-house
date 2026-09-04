@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -36,6 +36,7 @@
   header{text-align:center;padding:50px 8px 14px;position:relative;}
   header h1{font-size:32px;margin:0 0 4px;letter-spacing:1px;}
   header .sub{color:var(--ink-soft);font-size:18px;margin:0;}
+  header .mode-status{color:var(--accent-deep);font-size:15px;margin:4px 0 0;font-weight:600;letter-spacing:0.5px;}
   header .date-weather{
     position:absolute;top:10px;right:4px;
     color:var(--ink-soft);font-size:13px;line-height:1.5;text-align:right;
@@ -661,6 +662,7 @@
     <div class="date-weather" id="dateWeather"></div>
     <h1 id="siteTitle">🏡 玥玥和程程的学习小屋</h1>
     <p class="sub" id="siteSub">六年级 · 五年级 | 一起长大，一起学本领</p>
+    <p class="mode-status" id="modeStatus"></p>
   </header>
 
   <!-- 周六共读提示条 -->
@@ -750,9 +752,10 @@
     <div class="encourage" id="encourage"></div>
     <div class="copy" id="footerCopy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
     <div class="tools-row">
-      <button type="button" class="tool-btn" id="exportData">📤 导出成长数据</button>
-      <button type="button" class="tool-btn" id="importData">📥 导入成长数据</button>
-      <button type="button" class="reset-btn" id="resetIdentity">切换身份</button>
+      <button type="button" class="tool-btn" id="exportAll">📦 全部导出</button>
+      <button type="button" class="tool-btn" id="exportYue">👧 导出玥玥</button>
+      <button type="button" class="tool-btn" id="exportCheng">👦 导出程程</button>
+      <button type="button" class="tool-btn" id="importData">📥 导入数据</button>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
   </footer>
@@ -2110,6 +2113,11 @@
     var grades = kids.map(function(k){ return k.grade; }).join(' · ');  // 六年级 · 五年级 / 六年级 / 五年级
     t.textContent = '🏡 ' + names + '的学习小屋';
     s.textContent = grades + ' | 一起长大，一起学本领';
+    var ms = document.getElementById('modeStatus');
+    if(ms){
+      var modeMap = { all:'👨‍👩‍👧‍👦 一起看模式', yueyue:'👧 当前：玥玥模式', chengcheng:'👦 当前：程程模式' };
+      ms.textContent = modeMap[state.mode] || '';
+    }
   }
   /* 欢迎弹窗按钮年级（从 HOUSE 填到 span） */
   function fillWelcomeGrades(){
@@ -2606,36 +2614,69 @@
       if(box) box.hidden = true;
     });
 
-    // 家长重置身份：清掉身份标记，刷新重新选
-    var resetBtn = document.getElementById('resetIdentity');
-    if(resetBtn) resetBtn.addEventListener('click', function(){
-      try {
-        localStorage.removeItem(IDENTITY_KEY);
-        localStorage.removeItem(SAT_CLOSED_PREFIX + dateStr());
-      } catch(e){}
-      location.reload();
-    });
-
     // 导出 / 导入成长数据（学习小屋相关的 localStorage 键）
     function allowKey(k){ return k === IDENTITY_KEY || k === 'wb_readlog' || k.indexOf('wb_daily_') === 0 || k.indexOf(SAT_CLOSED_PREFIX) === 0; }
-    var expBtn = document.getElementById('exportData');
-    if(expBtn) expBtn.addEventListener('click', function(){
+
+    // 通用下载函数
+    function downloadJSON(obj, filename){
       try{
-        var out = {}, i, k;
-        for(i = 0; i < localStorage.length; i++){
-          k = localStorage.key(i);
-          if(k && allowKey(k)) out[k] = localStorage.getItem(k);
-        }
-        var blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
+        var blob = new Blob([JSON.stringify(obj, null, 2)], { type:'application/json' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'learning-house-backup-' + dateStr() + '.json';
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 300);
-      }catch(e){ if(typeof Speaker !== 'undefined') Speaker.tip('导出失败，请重试'); }
+        return true;
+      }catch(e){ return false; }
+    }
+
+    // 全部导出（玥玥+程程完整数据）
+    var expAll = document.getElementById('exportAll');
+    if(expAll) expAll.addEventListener('click', function(){
+      var out = {}, i, k;
+      for(i = 0; i < localStorage.length; i++){
+        k = localStorage.key(i);
+        if(k && allowKey(k)) out[k] = localStorage.getItem(k);
+      }
+      if(downloadJSON(out, 'learning-house-all-' + dateStr() + '.json')){
+        if(typeof Speaker !== 'undefined') Speaker.tip('已导出全部成长数据');
+      }else{
+        if(typeof Speaker !== 'undefined') Speaker.tip('导出失败，请重试');
+      }
     });
+
+    // 按孩子导出单人数据
+    function exportChild(kid, kidName){
+      var out = { _child: kid };
+      // 阅读记录：只取该孩子部分
+      var readlog = {};
+      try{
+        var allRl = JSON.parse(localStorage.getItem('wb_readlog') || '{}');
+        if(allRl[kid] && allRl[kid].length) readlog[kid] = allRl[kid];
+      }catch(e){}
+      out['wb_readlog'] = JSON.stringify(readlog);
+      // 每日打卡：只取包含该孩子的键
+      for(var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if(k && k.indexOf('wb_daily_') === 0 && k.indexOf('_' + kid + '_') !== -1){
+          out[k] = localStorage.getItem(k);
+        }
+      }
+      if(downloadJSON(out, 'learning-house-' + kidName + '-' + dateStr() + '.json')){
+        if(typeof Speaker !== 'undefined') Speaker.tip('已导出' + kidName + '的成长数据');
+      }else{
+        if(typeof Speaker !== 'undefined') Speaker.tip('导出失败，请重试');
+      }
+    }
+
+    var expYue = document.getElementById('exportYue');
+    if(expYue) expYue.addEventListener('click', function(){ exportChild('yueyue', '玥玥'); });
+    var expCheng = document.getElementById('exportCheng');
+    if(expCheng) expCheng.addEventListener('click', function(){ exportChild('chengcheng', '程程'); });
+
+    // 导入：自动识别全量备份或单人备份
     var impBtn = document.getElementById('importData');
     var impFile = document.getElementById('importFile');
     if(impBtn && impFile) impBtn.addEventListener('click', function(){ impFile.click(); });
@@ -2649,10 +2690,30 @@
           var data = JSON.parse(rd.result);
           if(!data || typeof data !== 'object') throw new Error('bad');
           var n = 0;
-          Object.keys(data).forEach(function(k){
-            if(allowKey(k)){ try{ localStorage.setItem(k, data[k]); n++; }catch(e){} }
-          });
-          if(typeof Speaker !== 'undefined') Speaker.tip('已导入 ' + n + ' 条成长数据，即将刷新');
+          var child = data._child;
+          if(child){
+            // 单人备份：只合并对应孩子数据
+            if(data['wb_readlog']){
+              try{
+                var existing = JSON.parse(localStorage.getItem('wb_readlog') || '{}');
+                var incoming = JSON.parse(data['wb_readlog']);
+                if(incoming[child]){ existing[child] = incoming[child]; localStorage.setItem('wb_readlog', JSON.stringify(existing)); n++; }
+              }catch(e){}
+            }
+            Object.keys(data).forEach(function(k){
+              if(k.indexOf('wb_daily_') === 0 && k.indexOf('_' + child + '_') !== -1){
+                try{ localStorage.setItem(k, data[k]); n++; }catch(e){}
+              }
+            });
+            var cn = (child === 'yueyue') ? '玥玥' : '程程';
+            if(typeof Speaker !== 'undefined') Speaker.tip('已导入' + cn + '的 ' + n + ' 条数据，即将刷新');
+          }else{
+            // 全量备份：覆盖全部
+            Object.keys(data).forEach(function(k){
+              if(allowKey(k)){ try{ localStorage.setItem(k, data[k]); n++; }catch(e){} }
+            });
+            if(typeof Speaker !== 'undefined') Speaker.tip('已导入 ' + n + ' 条成长数据，即将刷新');
+          }
           setTimeout(function(){ location.reload(); }, 800);
         }catch(e){
           if(typeof Speaker !== 'undefined') Speaker.tip('文件格式不对，请选择导出的 JSON');
