@@ -262,6 +262,25 @@
   .review-kid.yue{background:var(--yue);}
   .review-kid.cheng{background:var(--cheng);}
   .review-empty{text-align:center;color:var(--ink-soft);padding:30px 0;}
+  /* 今日一句话回顾 · 搜索条（仅 sentence 回顾显示，置于标题下、滚动内容外） */
+  .sen-search-wrap{
+    display:flex;align-items:center;gap:8px;flex-shrink:0;
+    margin:2px 18px 10px;padding:2px 12px 2px 10px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
+  }
+  .sen-search-wrap[hidden]{display:none;}
+  .sen-search-ic{color:var(--ink-soft);flex-shrink:0;}
+  .sen-search-input{
+    flex:1;border:none;background:transparent;outline:none;
+    font-family:inherit;font-size:16px;color:var(--ink);
+    padding:10px 0;min-height:20px;-webkit-appearance:none;
+  }
+  .sen-search-input::-webkit-search-cancel-button{display:none;}
+  .sen-search-clear{
+    border:none;background:#f0e6d6;color:var(--ink-soft);cursor:pointer;
+    width:26px;height:26px;border-radius:50%;font-size:16px;line-height:1;flex-shrink:0;
+  }
+  .sen-search-clear[hidden]{display:none;}
   /* 今日一句话回顾 · 主题筛选条 */
   .review-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
   .rf-chip{
@@ -709,6 +728,11 @@
       <div class="review-head">
         <h3 id="reviewTitle">往日回顾</h3>
         <button type="button" class="review-close" id="reviewClose" aria-label="关闭">×</button>
+      </div>
+      <div class="sen-search-wrap" id="senSearchWrap" hidden>
+        <svg class="sen-search-ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+        <input type="search" id="senSearch" class="sen-search-input" placeholder="搜这句话里的词，如 蜜蜂 / 道理" aria-label="搜索往日一句话">
+        <button type="button" class="sen-search-clear" id="senSearchClear" hidden aria-label="清空搜索">×</button>
       </div>
       <div class="review-body" id="reviewBody"></div>
     </div>
@@ -2250,17 +2274,26 @@
     var mask = document.getElementById('reviewMask');
     var title = document.getElementById('reviewTitle');
     var body = document.getElementById('reviewBody');
+    var wrap = document.getElementById('senSearchWrap');
+    var input = document.getElementById('senSearch');
+    var clear = document.getElementById('senSearchClear');
     if(!mask || !body) return;
     if(kind === 'english'){
       title.textContent = '每日英语 · 往日回顾';
       body.innerHTML = buildEnglishReview();
+      if(wrap) wrap.hidden = true;
     } else if(kind === 'history'){
       title.textContent = '共学主题 · 往日回顾';
       body.innerHTML = buildHistoryReview();
+      if(wrap) wrap.hidden = true;
     } else {
       sentenceFilter = '';   // 每次打开句子回顾从「全部」开始
+      senQuery = '';         // 清空上次搜索
+      if(input) input.value = '';
+      if(clear) clear.hidden = true;
       title.textContent = '今日一句话 · 往日回顾';
       body.innerHTML = buildSentenceReview();
+      if(wrap) wrap.hidden = false;
     }
     mask.hidden = false;
     requestAnimationFrame(function(){ mask.classList.add('show'); });
@@ -2335,8 +2368,26 @@
     html += '</div>';
     return html;
   }
-  /* 往日回顾「今日一句话」：按 SENT_SCHED 列表 + 主题筛选 */
-  var sentenceFilter = '';   // '' = 全部
+  /* 往日回顾「今日一句话」：按 SENT_SCHED 列表 + 主题筛选 + 正文搜索 */
+  var sentenceFilter = '';   // '' = 全部主题
+  var senQuery = '';         // '' = 不限，非空 = 搜正文关键词
+  /* 去掉 HTML 标签取纯文本（用于搜索匹配正文关键词） */
+  function stripHtml(s){
+    if(!s) return '';
+    return String(s).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  /* 一条句子是否通过当前主题筛选 + 正文搜索 */
+  function sentencePass(it){
+    if(!it || !it.main) return false;
+    if(sentenceFilter && it.topic !== sentenceFilter) return false;
+    if(senQuery){
+      var q = senQuery.toLowerCase();
+      var hay = (stripHtml(it.main) + ' ' + stripHtml(it.extra)).toLowerCase();
+      if(hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  }
+  /* 渲染搜索条 + 主题筛选条（固定头部展示，随内容重建不重绑输入框） */
   function sentenceFilterBar(){
     var chips = '<button type="button" class="rf-chip' + (sentenceFilter === '' ? ' on' : '') + '" data-topic="">全部</button>';
     TOPICS.forEach(function(t){
@@ -2349,13 +2400,14 @@
     var weeks = SENT_SCHED || [];
     if(!weeks.length) return '<div class="review-empty">暂时还没有往期一句话～</div>';
     var html = sentenceFilterBar();
+    var matched = 0;
     weeks.forEach(function(wk, wi){
       var hasAny = false;
       kids.forEach(function(kid){
         var per = wk[kid] || {};
         Object.keys(per).forEach(function(d){
           var it = per[d];
-          if(it && it.main && (!sentenceFilter || it.topic === sentenceFilter)) hasAny = true;
+          if(sentencePass(it)){ hasAny = true; matched++; }
         });
       });
       if(!hasAny) return;
@@ -2366,12 +2418,17 @@
         var dates = Object.keys(per).sort();
         dates.forEach(function(d){
           var it = per[d];
-          if(it && it.main && (!sentenceFilter || it.topic === sentenceFilter)) html += sentenceReviewItemHTML(it, d, kid);
+          if(sentencePass(it)) html += sentenceReviewItemHTML(it, d, kid);
         });
       });
       html += '</div>';
     });
-    if(!html) html = sentenceFilterBar() + '<div class="review-empty">这个主题还没有历史内容～</div>';
+    if(!matched){
+      html = sentenceFilterBar()
+        + (senQuery
+            ? '<div class="review-empty">没找到和「' + escHtml(senQuery) + '」相关的一句话～换个词试试</div>'
+            : '<div class="review-empty">这个主题还没有历史内容～</div>');
+    }
     return html;
   }
 
@@ -2587,6 +2644,32 @@
       var sentence = btn.getAttribute('data-sentence');
       if(word) Speaker.speakWordSentence(word, sentence, btn);
     });
+
+    // 往日回顾「今日一句话」正文搜索：输入防抖 → 更新 senQuery → 重建列表
+    var senSearch = document.getElementById('senSearch');
+    var senSearchClear = document.getElementById('senSearchClear');
+    if(senSearch){
+      var senDebounce = null;
+      var applySenSearch = function(){
+        senQuery = senSearch.value.trim();
+        if(senSearchClear) senSearchClear.hidden = !senQuery;
+        var body = document.getElementById('reviewBody');
+        if(body) body.innerHTML = buildSentenceReview();
+        try { if(body) body.scrollTop = 0; } catch(e){}
+      };
+      senSearch.addEventListener('input', function(){
+        if(senDebounce) clearTimeout(senDebounce);
+        senDebounce = setTimeout(applySenSearch, 200);
+      });
+      senSearch.addEventListener('search', applySenSearch);  // 兼容自带清空X
+      if(senSearchClear) senSearchClear.addEventListener('click', function(){
+        senSearch.value = '';
+        if(senDebounce) clearTimeout(senDebounce);
+        applySenSearch();
+        senSearch.focus();
+      });
+    }
+
     document.addEventListener('keydown', function(ev){
       if(ev.key === 'Escape'){ var m = document.getElementById('reviewMask'); if(m && !m.hidden) closeReview(); }
     });
