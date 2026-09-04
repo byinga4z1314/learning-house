@@ -560,6 +560,33 @@
     .entry-grid{gap:10px;}
     .entry-cols{gap:10px;}
   }
+
+  /* ===== 入口卡全模式统一紧凑小格（图标+短名，去 desc）——覆盖上方 .entry-card 基础值 ===== */
+  .entry-card{
+    padding:12px 8px;border-radius:16px;gap:4px;min-height:64px;
+  }
+  .entry-card .icon{font-size:24px;line-height:1;}
+  .entry-card .name{
+    font-size:15px;font-weight:700;line-height:1.25;
+    max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .entry-card .desc{display:none;}   /* 去掉说明行（含"请切换孩子模式填写表单"） */
+  .entry-grid{gap:10px;}            /* 单孩 4 格：2×2（.entry-grid 已是 2 列） */
+  /* 一起看每孩 4 格也 2×2：列标题独占整行 */
+  .entry-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .entry-col-title{grid-column:1 / -1;font-size:15px;padding:6px 0;}
+  /* 一起看 disabled：浅灰不可点、稍提透明度避免太淡看不清 */
+  .entry-card.disabled{opacity:.72;filter:grayscale(.25);}
+  .entry-card.disabled:focus{outline:none;}
+  /* 提示条：仅一起看(body[data-mode="all"])显示，零 JS */
+  #entryTip{display:none;}
+  body[data-mode="all"] #entryTip{display:block;}
+  .entry-tip{
+    background:#fff7e3;border:1px dashed #e3c06a;border-radius:12px;
+    color:#8a6a2e;font-size:14px;line-height:1.5;padding:8px 12px;margin-bottom:12px;
+  }
+  /* 窄屏：一起看两娃上下排，防 4 列挤爆/名字截断 */
+  @media (max-width:520px){ .entry-cols{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -570,8 +597,8 @@
   <!-- 1. 顶部标题 -->
   <header>
     <div class="date-weather" id="dateWeather"></div>
-    <h1>🏡 玥玥和程程的学习小屋</h1>
-    <p class="sub">六年级 · 五年级 | 一起长大，一起学本领</p>
+    <h1 id="siteTitle">🏡 玥玥和程程的学习小屋</h1>
+    <p class="sub" id="siteSub">六年级 · 五年级 | 一起长大，一起学本领</p>
   </header>
 
   <!-- 周六共读提示条 -->
@@ -619,6 +646,7 @@
   <!-- 6. 四大入口区（按模式动态渲染：单孩 4 个 / 一起看 8 个分两列） -->
   <section>
     <h2 class="sec-title">✏️ 我要做的事</h2>
+    <div class="entry-tip" id="entryTip">💡 切到下方「玥玥」或「程程」就能点开填写；「一起看」只展示清单</div>
     <div id="entryArea"></div>
   </section>
 
@@ -652,7 +680,7 @@
       <button type="button" data-mode="chengcheng" class="mode-cheng">程程模式</button>
     </div>
     <div class="encourage" id="encourage"></div>
-    <div class="copy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
+    <div class="copy" id="footerCopy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
     <div class="tools-row">
       <button type="button" class="tool-btn" id="exportData">📤 导出成长数据</button>
       <button type="button" class="tool-btn" id="importData">📥 导入成长数据</button>
@@ -668,8 +696,8 @@
     <div class="welcome-card">
       <h2>欢迎来到学习小屋！🏡<br>你是谁呀？</h2>
       <div class="welcome-btns">
-        <button type="button" class="welcome-btn yue" data-user="yueyue">👧<br>我是玥玥<br><span>六年级</span></button>
-        <button type="button" class="welcome-btn cheng" data-user="chengcheng">👦<br>我是程程<br><span>五年级</span></button>
+        <button type="button" class="welcome-btn yue" data-user="yueyue">👧<br>我是玥玥<br><span id="welcomeGradeYue">六年级</span></button>
+        <button type="button" class="welcome-btn cheng" data-user="chengcheng">👦<br>我是程程<br><span id="welcomeGradeCheng">五年级</span></button>
       </div>
       <p class="welcome-tip">选一次就好，以后会自动记住哦~</p>
     </div>
@@ -736,7 +764,19 @@
    *       浏览器只读排期展示，保证与 Obsidian 周归档一致、跨天不跳变。
    * 每周更新时：在 SENT_SCHED 追加一周(start/end + 每孩每日期条目)
    * ============================================================ */
-  var KID_NAMES = { yueyue: '玥玥', chengcheng: '程程' };
+  /* ===== 孩子与学年集中配置：升学年(每年9月)只改这里 =====
+   * grade 写当前学年年级展示串(如'六年级'/'初一')；termYear/season 用于底部版权。
+   * 顶部标题、欢迎按钮年级、footer copy 都由它驱动。 */
+  var HOUSE = {
+    kids: [
+      { key: 'yueyue',     name: '玥玥', grade: '六年级' },   // 2027-09 升初一 → 改 '初一'
+      { key: 'chengcheng', name: '程程', grade: '五年级' }    // 2027-09 升六年级 → 改 '六年级'
+    ],
+    termYear: 2026,   // footer 'xxx学年' + '© xxx'
+    season:   '秋季'
+  };
+  var KID_NAMES = {};
+  HOUSE.kids.forEach(function(k){ KID_NAMES[k.key] = k.name; });
   /* 21 主题池（合并重叠后）：id / icon / name —— 素材打标、回顾筛选、归档共用 */
   var TOPICS = [
     { id:'life_common',   icon:'💡', name:'生活常识与技能' },
@@ -1918,6 +1958,36 @@
     renderReadLog();
   }
 
+  /* 顶部标题随模式：一起看=两人，单孩=只自己（从 HOUSE 读 name/grade） */
+  function renderHeader(){
+    var t = document.getElementById('siteTitle');
+    var s = document.getElementById('siteSub');
+    if(!t || !s) return;
+    var kids = state.mode === 'all'
+      ? HOUSE.kids
+      : HOUSE.kids.filter(function(k){ return k.key === state.mode; });
+    var names  = kids.map(function(k){ return k.name;  }).join('和');   // 玥玥和程程 / 玥玥 / 程程
+    var grades = kids.map(function(k){ return k.grade; }).join(' · ');  // 六年级 · 五年级 / 六年级 / 五年级
+    t.textContent = '🏡 ' + names + '的学习小屋';
+    s.textContent = grades + ' | 一起长大，一起学本领';
+  }
+  /* 欢迎弹窗按钮年级（从 HOUSE 填到 span） */
+  function fillWelcomeGrades(){
+    HOUSE.kids.forEach(function(k){
+      var id = k.key === 'yueyue' ? 'welcomeGradeYue' : 'welcomeGradeCheng';
+      var el = document.getElementById(id);
+      if(el) el.textContent = k.grade;
+    });
+  }
+  /* 底部版权行（随 termYear/season/孩子名，不随模式变） */
+  function renderFooter(){
+    var el = document.getElementById('footerCopy');
+    if(!el) return;
+    var all = HOUSE.kids.map(function(k){ return k.name; }).join('和');
+    el.textContent = all + '的学习小屋 · ' + HOUSE.termYear + '学年' + HOUSE.season
+      + '学期 · © ' + HOUSE.termYear + ' 我们一家：一起长大，一起学本领';
+  }
+
   var MODE_BTN_LABEL = { all: '一起看', yueyue: '玥玥模式', chengcheng: '程程模式' };
   function renderModeButtons(){
     var btns = document.querySelectorAll('#modeSwitch button');
@@ -2141,6 +2211,7 @@
    * 统一刷新入口：所有联动刷新都走这里，渲染函数之间禁止互调
    * ============================================================ */
   function refreshAll(){
+    renderHeader();
     renderModeButtons();
     renderSaturdayHint();
     renderEnglish();
@@ -2532,6 +2603,9 @@
     var stored = getStoredUser();
     state.mode = modeFromUser(stored);
     applyTheme();
+    renderHeader();        // 首帧前把标题/副标题切到当前模式（data 异步期间不闪旧）
+    fillWelcomeGrades();   // 欢迎窗按钮年级先填好，再 showWelcome
+    renderFooter();        // 底部版权（随学年配置）
     loadData(function(){
       refreshAll();
       if(!stored){ showWelcome(); }   // 第一次打开 → 弹身份选择
