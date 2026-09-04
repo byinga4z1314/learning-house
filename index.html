@@ -1412,9 +1412,16 @@
   function renderTodayDate(){
     var el = document.getElementById('todayDate');
     if(!el) return;
-    var now = new Date();
     var wn = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-    el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()];
+    if(sentViewDate){
+      var parts = sentViewDate.split('-');
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      el.textContent = '📅 ' + (d.getMonth()+1) + '月' + d.getDate() + '日 · ' + wn[d.getDay()] + ' · 查看历史';
+    }else{
+      var now = new Date();
+      el.textContent = '📅 ' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + wn[now.getDay()];
+    }
+    el.title = '点击选择日期查看历史一句话';
   }
 
   /* 排期查找：返回 {week, item} 给某孩某日期；无对应周则钳制到最近周 */
@@ -1455,14 +1462,20 @@
     return { main: it.main, extra: it.extra, topic: it.topic || '', fallback: true };
   }
 
+  // 今日一句话：查看历史日期/指定孩子（null=跟随今天/跟随模式）
+  var sentViewDate = null;
+  var sentViewKid = null;
+
   function renderSentences(){
     var box = document.getElementById('sentenceCards');
     if(!box) return;
     box.innerHTML = '';
-    var today = dateStr();
-    visibleKids().forEach(function(kid){
-      var res = sentLookup(kid, today);
-      var dayData = (res && res.item) ? res.item : sentFallback(kid, today);
+    var viewDate = sentViewDate || dateStr();
+    var isHist = !!sentViewDate;
+    var kids = sentViewKid ? [sentViewKid] : visibleKids();
+    kids.forEach(function(kid){
+      var res = sentLookup(kid, viewDate);
+      var dayData = (res && res.item) ? res.item : sentFallback(kid, viewDate);
       var isFallback = !(res && res.item);
       var card = document.createElement('div');
       card.className = 'ts-card';
@@ -1476,7 +1489,7 @@
       }
       var tName = (dayData && dayData.topic) ? topicLabel(dayData.topic) : '';
       var lt = document.createElement('span');
-      lt.textContent = '✨ 今日一句话 · ' + (tName || '每日一句') + (isFallback ? ' · 重温' : '');
+      lt.textContent = (isHist ? '📅 历史一句话 · ' : '✨ 今日一句话 · ') + (tName || '每日一句') + (isFallback ? ' · 重温' : '');
       label.appendChild(lt);
       card.appendChild(label);
       if(!dayData || !dayData.main){
@@ -2721,6 +2734,72 @@
       };
       rd.readAsText(f);
     });
+
+
+    // ===== 今日一句话：日历选择日期+孩子查看历史 =====
+    (function(){
+      var dateRow = document.getElementById('datePickerRow');
+      var dateEl  = document.getElementById('todayDate');
+      var pick    = document.getElementById('datePick');
+      var btnYue  = document.getElementById('dpKidYue');
+      var btnCheng= document.getElementById('dpKidCheng');
+      var btnReset= document.getElementById('datePickReset');
+      if(!dateRow || !dateEl || !pick || !btnYue || !btnCheng) return;
+
+      function refreshKidBtns(){
+        btnYue.classList.toggle('on', sentViewKid === 'yueyue');
+        btnCheng.classList.toggle('on', sentViewKid === 'chengcheng');
+      }
+      function refreshReset(){
+        if(btnReset) btnReset.hidden = !sentViewDate && !sentViewKid;
+      }
+      function applyView(){
+        refreshKidBtns();
+        refreshReset();
+        renderTodayDate();
+        renderSentences();
+      }
+
+      // 点击日期文字 → 展开/收起选择面板
+      dateEl.addEventListener('click', function(){
+        var show = dateRow.hasAttribute('hidden');
+        if(show){
+          dateRow.removeAttribute('hidden');
+          dateRow.style.display = 'flex';
+          pick.value = sentViewDate || dateStr();
+          refreshKidBtns();
+        }else{
+          dateRow.setAttribute('hidden', '');
+          dateRow.style.display = 'none';
+        }
+      });
+
+      // 选择日期 → 立即显示那天的句子
+      pick.addEventListener('change', function(){
+        sentViewDate = pick.value || null;
+        applyView();
+      });
+
+      // 切换孩子
+      btnYue.addEventListener('click', function(){
+        sentViewKid = (sentViewKid === 'yueyue') ? null : 'yueyue';
+        applyView();
+      });
+      btnCheng.addEventListener('click', function(){
+        sentViewKid = (sentViewKid === 'chengcheng') ? null : 'chengcheng';
+        applyView();
+      });
+
+      // 回到今天
+      if(btnReset) btnReset.addEventListener('click', function(){
+        sentViewDate = null;
+        sentViewKid = null;
+        pick.value = dateStr();
+        dateRow.setAttribute('hidden', '');
+        dateRow.style.display = 'none';
+        applyView();
+      });
+    })();
 
     // 今日一句话卡片：点击展开/收起补充内容
     document.getElementById('sentenceCards').addEventListener('click', function(ev){
