@@ -939,7 +939,7 @@
      程程：国学→美育→安全→志向→自然→表达→规则（连续不重主题）
      主角尽量融入玥玥程程生活场景 */
   var SENT_WEEK_1 = {
-    start: '2026-09-07', end: '2026-09-13', week: 1,
+    start: '2026-09-07', end: '2026-09-13', week: 2,
     yueyue: {
       '2026-09-07': {
         main: '<b>玥玥的记账本发现：光"随手买的小零食"一个月就花掉四十多。</b><br>记账不是抠门，是让钱"看得见"——把花掉的钱分成「必要、想要、冲动」三类，砍掉一半冲动消费，竟能多攒出一本手账本。',
@@ -1147,12 +1147,12 @@
 
   /* 把老数据(WEEK_1..3)转成排期入库 —— 必须在 WEEK_1..3 定义之后执行 */
   // WEEK_1 已改为新格式 SENT_WEEK_1，直接 push，不再用 buildSentenceWeek
-  SENT_SCHED.push(buildSentenceWeek('2026-09-14','2026-09-20',WEEK_2,2));
-  SENT_SCHED.push(buildSentenceWeek('2026-09-21','2026-09-27',WEEK_3,3));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-14','2026-09-20',WEEK_2,3));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-21','2026-09-27',WEEK_3,4));
   /* ===== 第2周·周六周日补排 2026-09-19(六)~09-20(日)：真话，修复原"周末占位" =====
      玥玥：感恩家庭→信息辨别；程程：少儿财商→历史人文 */
   var SENT_WEEK_2_WEEKEND = {
-    start: '2026-09-19', end: '2026-09-20', week: 2,
+    start: '2026-09-19', end: '2026-09-20', week: 3,
     yueyue: {
       '2026-09-19': {
         main: '<b>玥玥发现妈妈每天下班后还要做饭、洗衣服、检查作业，好像从来不说累。</b><br>她主动帮妈妈摆碗筷、收衣服。妈妈笑着说「有你帮忙，轻松多了」。感恩不是说大话，是看见家人的付出，并用小事回应。',
@@ -1180,14 +1180,14 @@
   };
   // 把周末补排合并进第2周
   (function(){
-    var w2 = SENT_SCHED.find(function(w){return w.week===2;});
+    var w2 = SENT_SCHED.find(function(w){return w.week===3;});
     if(w2){ for(var k in SENT_WEEK_2_WEEKEND.yueyue) w2.yueyue[k]=SENT_WEEK_2_WEEKEND.yueyue[k]; for(var k in SENT_WEEK_2_WEEKEND.chengcheng) w2.chengcheng[k]=SENT_WEEK_2_WEEKEND.chengcheng[k]; }
   })();
 
   /* ===== 第3周·周六周日补排 2026-09-26(六)~09-27(日)：真话，修复原"周末占位" =====
      玥玥：作文摘抄→时间习惯；程程：社交相处→思辨逻辑 */
   var SENT_WEEK_3_WEEKEND = {
-    start: '2026-09-26', end: '2026-09-27', week: 3,
+    start: '2026-09-26', end: '2026-09-27', week: 4,
     yueyue: {
       '2026-09-26': {
         main: '<b>作文摘抄·写人好句：</b><br>「奶奶的手很粗糙，像老树皮，但就是这双手，每天给我做出香喷喷的饭菜，缝好掉了的扣子。」',
@@ -1214,7 +1214,7 @@
     }
   };
   (function(){
-    var w3 = SENT_SCHED.find(function(w){return w.week===3;});
+    var w3 = SENT_SCHED.find(function(w){return w.week===4;});
     if(w3){ for(var k in SENT_WEEK_3_WEEKEND.yueyue) w3.yueyue[k]=SENT_WEEK_3_WEEKEND.yueyue[k]; for(var k in SENT_WEEK_3_WEEKEND.chengcheng) w3.chengcheng[k]=SENT_WEEK_3_WEEKEND.chengcheng[k]; }
   })();
 
@@ -1223,7 +1223,7 @@
      为避免同孩近三周内重复，内容为全新撰写（不与 WEEK_1~3 各键句子重复），
      类别按 科普→情商→歇后语 相邻不连重。 */
   var SENT_WEEK_0 = {
-    start: '2026-09-04', end: '2026-09-06', week: 0,
+    start: '2026-09-01', end: '2026-09-06', week: 1,
     yueyue: {
       '2026-09-04': {
         main: '<b>彩虹是圆的，不是半圆——站在高处或飞机上，能看到完整的彩虹环。</b>',
@@ -1279,6 +1279,7 @@
     }
   };
   var ENGLISH_WEEKS = [
+    { start: '2026-09-01', end: '2026-09-06', yueyue: {}, chengcheng: {} },
     { start: '2026-09-07', end: '2026-09-13', yueyue: ENGLISH_WEEK_1.yueyue, chengcheng: ENGLISH_WEEK_1.chengcheng },
     { start: '2026-09-14', end: '2026-09-20', yueyue: {}, chengcheng: {} },
     { start: '2026-09-21', end: '2026-09-27', yueyue: {}, chengcheng: {} }
@@ -1304,9 +1305,9 @@
     formLinks: {},
     messages: [],   // {id, owner:'yueyue'|'chengcheng', text, date, status:'待处理'|'已回复'}
     weeks: [
-      { week:1, title:'需要vs想要', file:'week-01.html', owner:'both', desc:'财商启蒙，和本周每日英语 need/want 呼应' },
-      { week:2, title:'情绪管理', file:'week-02.html', owner:'both', desc:'做自己心情的小主人，情绪识别+愤怒管理+表达感受' },
-      { week:3, title:'时间管理', file:'week-03.html', owner:'both', desc:'把一天变成够用的一天，拖延+专注+要事第一' }
+      { week:2, title:'需要vs想要', file:'week-01.html', owner:'both', desc:'财商启蒙，和本周每日英语 need/want 呼应' },
+      { week:3, title:'情绪管理', file:'week-02.html', owner:'both', desc:'做自己心情的小主人，情绪识别+愤怒管理+表达感受' },
+      { week:4, title:'时间管理', file:'week-03.html', owner:'both', desc:'把一天变成够用的一天，拖延+专注+要事第一' }
     ],      // {week:1, title, file:'week-01.html', owner:'both'|'yueyue'|'chengcheng'}
     videos: [
       { id:'v20260902', title:'五步教你马伯庸日记法', url:'https://v.douyin.com/imOcqj4sbJE/', date:'2026-09-02', owner:'both', desc:'作家马伯庸的写日记小妙招' },
@@ -2433,9 +2434,9 @@
     var weeks = data.weeks.slice().sort(function(a, b){ return (a.week || 0) - (b.week || 0); });
 
     // 本周共学：按日期计算当前周次（第1周周一=2026-09-07），找不到对应周则显示最近的
-    var week1Monday = new Date(2026, 8, 7); // 2026-09-07
+    var week1Start = new Date(2026, 8, 1); // 2026-09-01 开学日，第1周
     var today = new Date();
-    var dayDiff = Math.floor((today - week1Monday) / (1000*60*60*24));
+    var dayDiff = Math.floor((today - week1Start) / (1000*60*60*24));
     var currentWeekNo = Math.floor(dayDiff / 7) + 1;
     if(currentWeekNo < 1) currentWeekNo = 1;
     var current = null;
