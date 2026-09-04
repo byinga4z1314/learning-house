@@ -36,7 +36,6 @@
   header{text-align:center;padding:50px 8px 14px;position:relative;}
   header h1{font-size:32px;margin:0 0 4px;letter-spacing:1px;}
   header .sub{color:var(--ink-soft);font-size:18px;margin:0;}
-  header .mode-status{color:var(--accent-deep);font-size:15px;margin:4px 0 0;font-weight:600;letter-spacing:0.5px;}
   header .date-weather{
     position:absolute;top:10px;right:4px;
     color:var(--ink-soft);font-size:13px;line-height:1.5;text-align:right;
@@ -514,6 +513,7 @@
     border:1px solid var(--line);background:var(--card);color:var(--ink);
     font-size:15px;font-family:inherit;padding:9px 16px;border-radius:12px;cursor:pointer;min-height:44px;
   }
+  .tool-btn.highlight{border-color:var(--accent);background:var(--yue-bg);font-weight:600;}
   footer .tool-btn:active{transform:scale(.97);}
 
   /* ===== 按模式切换整体色调 ===== */
@@ -642,6 +642,7 @@
     .check-item{min-width:120px;font-size:16px;}
     .welcome-card h2{font-size:20px;} .welcome-btn span{font-size:15px;}
     footer .tool-btn{font-size:13px;padding:8px 6px;}
+  .tool-btn.highlight{border-color:var(--accent);background:var(--yue-bg);font-weight:600;}
     .review-head{padding:14px 12px;} .review-body{padding:6px 12px 22px;}
     .rf-chip{font-size:13px;padding:4px 8px;}
   }
@@ -667,7 +668,6 @@
     <div class="date-weather" id="dateWeather"></div>
     <h1 id="siteTitle">🏡 玥玥和程程的学习小屋</h1>
     <p class="sub" id="siteSub">六年级 · 五年级 | 一起长大，一起学本领</p>
-    <p class="mode-status" id="modeStatus"></p>
   </header>
 
   <!-- 周六共读提示条 -->
@@ -756,7 +756,7 @@
       <button type="button" data-mode="chengcheng" class="mode-cheng">程程模式</button>
     </div>
     <div class="encourage" id="encourage"></div>
-    <div class="copy" id="footerCopy">玥玥和程程的学习小屋 · 2026学年秋季学期 · © 2026 我们一家：一起长大，一起学本领</div>
+    <div class="copy" id="footerCopy">玥玥和程程的学习小屋 · 2026秋季学期</div>
     <div class="tools-row">
       <button type="button" class="tool-btn" id="exportAll">📦 全部导出</button>
       <button type="button" class="tool-btn" id="exportYue">👧 导出玥玥</button>
@@ -2191,11 +2191,7 @@
     var grades = kids.map(function(k){ return k.grade; }).join(' · ');  // 六年级 · 五年级 / 六年级 / 五年级
     t.textContent = '🏡 ' + names + '的学习小屋';
     s.textContent = grades + ' | 一起长大，一起学本领';
-    var ms = document.getElementById('modeStatus');
-    if(ms){
-      var modeMap = { all:'👨‍👩‍👧‍👦 一起看模式', yueyue:'👧 当前：玥玥模式', chengcheng:'👦 当前：程程模式' };
-      ms.textContent = modeMap[state.mode] || '';
-    }
+
   }
   /* 欢迎弹窗按钮年级（从 HOUSE 填到 span） */
   function fillWelcomeGrades(){
@@ -2206,16 +2202,15 @@
     });
   }
   /* 底部版权行（随 termYear/season/孩子名，不随模式变） */
-  function renderFooter(){
+    function renderFooter(){
     var el = document.getElementById('footerCopy');
     if(!el) return;
     var all = HOUSE.kids.map(function(k){ return k.name; }).join('和');
-    el.textContent = all + '的学习小屋 · ' + HOUSE.termYear + '学年' + HOUSE.season
-      + '学期 · © ' + HOUSE.termYear + ' 我们一家：一起长大，一起学本领';
+    el.textContent = all + '的学习小屋 · ' + HOUSE.termYear + '秋季学期';
   }
 
   var MODE_BTN_LABEL = { all: '一起看', yueyue: '玥玥模式', chengcheng: '程程模式' };
-  function renderModeButtons(){
+    function renderModeButtons(){
     var btns = document.querySelectorAll('#modeSwitch button');
     for(var i = 0; i < btns.length; i++){
       var b = btns[i];
@@ -2228,6 +2223,11 @@
         b.textContent = MODE_BTN_LABEL[md] || b.textContent.replace(/^✓\s*/, '');
       }
     }
+    // 导出按钮高亮：当前模式对应孩子的导出按钮高亮
+    var yueBtn = document.getElementById('exportYue');
+    var chengBtn = document.getElementById('exportCheng');
+    if(yueBtn) yueBtn.classList.toggle('highlight', state.mode === 'yueyue');
+    if(chengBtn) chengBtn.classList.toggle('highlight', state.mode === 'chengcheng');
   }
 
   function renderTodo(){
