@@ -482,11 +482,6 @@
     color:var(--ink-soft);font-size:16px;margin-bottom:8px;line-height:1.8;
   }
   footer .copy{font-size:15px;line-height:1.8;}
-  /* 当前模式指示文字 */
-  footer .mode-label{
-    font-size:15px;font-weight:700;color:var(--accent-deep);
-    background:#fff7ed;display:inline-block;padding:4px 16px;border-radius:999px;margin-bottom:10px;
-  }
   /* 底部成长数据导出/导入按钮行 */
   footer .tools-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px;}
   footer .tool-btn{
@@ -651,7 +646,6 @@
 
   <!-- 10. 底部 -->
   <footer>
-    <div class="mode-label" id="modeLabel"></div>
     <div class="mode-switch" id="modeSwitch">
       <button type="button" data-mode="all" class="active">一起看</button>
       <button type="button" data-mode="yueyue" class="mode-yue">玥玥模式</button>
@@ -1925,7 +1919,6 @@
   }
 
   var MODE_BTN_LABEL = { all: '一起看', yueyue: '玥玥模式', chengcheng: '程程模式' };
-  var MODE_TEXT = { all: '当前：一起看 · 全家共学', yueyue: '当前：玥玥模式', chengcheng: '当前：程程模式' };
   function renderModeButtons(){
     var btns = document.querySelectorAll('#modeSwitch button');
     for(var i = 0; i < btns.length; i++){
@@ -1939,8 +1932,6 @@
         b.textContent = MODE_BTN_LABEL[md] || b.textContent.replace(/^✓\s*/, '');
       }
     }
-    var lab = document.getElementById('modeLabel');
-    if(lab) lab.textContent = MODE_TEXT[state.mode] || '当前：一起看 · 全家共学';
   }
 
   function renderTodo(){
