@@ -607,6 +607,39 @@
   }
   /* 窄屏：一起看两娃上下排，防 4 列挤爆/名字截断 */
   @media (max-width:520px){ .entry-cols{grid-template-columns:1fr;} }
+
+  /* ===== 响应式系统加固：防横向溢出 + 多尺寸适配（340 手机 / 平板） ===== */
+  img,svg,video,canvas{max-width:100%;height:auto;}
+  .ts-main,.ts-extra,.review-ts-main,.review-ts-extra,.eng-zh,.eng-sentence{
+    overflow-wrap:break-word;word-break:break-word;
+  }
+  .rf-chip{white-space:nowrap;}
+
+  @media (max-width:360px){
+    body{padding:10px;}
+    h1{font-size:23px;} .site-sub{font-size:16px;}
+    .mode-switch button{font-size:15px;padding:8px 4px;}
+    .card,.today-card,.english-card{padding:14px 12px;}
+    .sec-title{font-size:19px;}
+    .entry-card .icon{font-size:22px;}
+    .entry-card .name{font-size:14px;}
+    .ts-main{font-size:17px;}
+    .check-item{min-width:120px;font-size:16px;}
+    .welcome-card h2{font-size:20px;} .welcome-btn span{font-size:15px;}
+    footer .tool-btn{font-size:13px;padding:8px 6px;}
+    .review-head{padding:14px 12px;} .review-body{padding:6px 12px 22px;}
+    .rf-chip{font-size:13px;padding:4px 8px;}
+  }
+  @media (max-width:480px){
+    .saturday-hint{flex-wrap:wrap;}
+    .saturday-hint .sh-text{width:100%;}
+    .saturday-hint .sh-go{margin-left:auto;}
+  }
+  @media (min-width:768px){
+    .review-mask{align-items:center;padding:40px 16px;}
+    .review-sheet{border-radius:22px;max-height:84vh;}
+    .welcome-card{padding:36px 30px;}
+  }
 </style>
 </head>
 <body>
@@ -829,32 +862,50 @@
   var TOPIC_MAP = {};
   TOPICS.forEach(function(t){ TOPIC_MAP[t.id] = t; });
   function topicLabel(id){ var t = TOPIC_MAP[id]; return t ? (t.icon + ' ' + t.name) : ''; }
+  /* 回顾筛选 chip 用的主题短名（icon + 短词），避免长名挤爆一排 */
+  var TOPIC_SHORT = {
+    life_common:'生活常识', idiom_riddle:'歇后语', eq_heart:'情商', fun_science:'科普', book_quote:'读书',
+    kids_finance:'财商', history_story:'历史', composition:'作文', time_habit:'习惯', social_wise:'社交',
+    think_wise:'思辨', geo_know:'地理', sinology:'国学', art_aesthetic:'美育', self_safety:'安全',
+    ideal_goal:'志向', nature_life:'自然', speak_skill:'表达', rule_moral:'规则', gratitude:'感恩', info_wise:'信息'
+  };
+  /* 某主题在当前可见孩子排期里是否已有条目（供筛选 chip 只显示有内容的主题） */
+  function topicSeen(tid){
+    var kids = visibleKids();
+    for(var i = 0; i < SENT_SCHED.length; i++){
+      var wk = SENT_SCHED[i];
+      for(var k = 0; k < kids.length; k++){
+        var per = wk[kids[k]] || {};
+        for(var d in per){ if(per[d] && per[d].topic === tid) return true; }
+      }
+    }
+    return false;
+  }
   /* 排期素材条目：{ main, extra, topic }；week 数组每项 { start, end, yueyue:{date:条目}, chengcheng:{date:条目} } */
   var SENT_SCHED = [];
 
-  /* 老数据(5类固定主题)迁移工具：把 WEEK_1..3 中按键1~5(原周一~周五主题)与周末键，
-     标注真实主题 topic，并按 每周start~end 的7个日期落到 SENT_SCHED。
+  /* 老数据(5类固定主题)迁移工具：把 WEEK_1..3 中按键1~5(原周一~周五主题)转成排期入库，
+     只转真话，不再生成"今天周末/玩得开心"占位模板（键6/0 变量保留但不再被消费）。
      主题映射：键1=生活常识→life_common；键2=歇后语→idiom_riddle；键3=情商→eq_heart；
-               键4=科普→fun_science；键5=读书→book_quote；周末键6/0→gratitude。
-     转换后仍按"孩/日期"存，供 renderSentences 读取；后续每周用同一结构直接追加。
-     注意：buildSentenceWeek 需在 WEEK_1..3 定义之后调用（下方 WEEK_3 后 push）。 */
-  function buildSentenceWeek(start, end, W){
+               键4=科普→fun_science；键5=读书→book_quote。
+     转换后仍按"孩/日期"存，供 renderSentences 读取。
+     注意：buildSentenceWeek 需在 WEEK_1..3 定义之后调用（下方 WEEK_3 后 push）。
+     今后新周（内容活）不再用本函数，直接按 WEEK_0 的字面量结构
+     {start,end,week,yueyue:{日期:{main,extra,topic}},chengcheng:{...}} 追加，逐日期显式带 topic。 */
+  function buildSentenceWeek(start, end, W, weekNo){
     var wk = { start: start, end: end, yueyue: {}, chengcheng: {} };
-    var dayMap = { 1:'life_common', 2:'idiom_riddle', 3:'eq_heart', 4:'fun_science', 5:'book_quote', 6:'gratitude', 0:'gratitude' };
+    if(weekNo) wk.week = weekNo;
+    var topByKey = { 1:'life_common', 2:'idiom_riddle', 3:'eq_heart', 4:'fun_science', 5:'book_quote' };
     ['yueyue','chengcheng'].forEach(function(kid){
       var src = (W && W[kid]) || {};
       var sd = new Date(start);
       var dates = [];
       for(var i = 0; i < 7; i++){ dates.push(dateStr(new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + i))); }
-      [1,2,3,4,5,6].forEach(function(dn, i){
+      [1,2,3,4,5].forEach(function(dn, i){
         var it = src[dn];
         if(!it || !it.main) return;
-        wk[kid][dates[i]] = { main: it.main, extra: it.extra || '', topic: dayMap[dn] || '' };
+        wk[kid][dates[i]] = { main: it.main, extra: it.extra || '', topic: topByKey[dn] || '' };
       });
-      if(!wk[kid][dates[6]]){
-        var it0 = src[0];
-        if(it0 && it0.main) wk[kid][dates[6]] = { main: it0.main, extra: it0.extra || '', topic: 'gratitude' };
-      }
     });
     return wk;
   }
@@ -1052,9 +1103,52 @@
   };
 
   /* 把老数据(WEEK_1..3)转成排期入库 —— 必须在 WEEK_1..3 定义之后执行 */
-  SENT_SCHED.push(buildSentenceWeek('2026-09-07','2026-09-13',WEEK_1));
-  SENT_SCHED.push(buildSentenceWeek('2026-09-14','2026-09-20',WEEK_2));
-  SENT_SCHED.push(buildSentenceWeek('2026-09-21','2026-09-27',WEEK_3));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-07','2026-09-13',WEEK_1,1));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-14','2026-09-20',WEEK_2,2));
+  SENT_SCHED.push(buildSentenceWeek('2026-09-21','2026-09-27',WEEK_3,3));
+
+  /* ===== 第0周·本周补排 2026-09-04(五)~09-06(日)：真话+topic，无周末占位 =====
+     必须 unshift 到 SENT_SCHED 最前，否则 9-04/9-05 会被 sentLookup 钳回 WEEK_1 而取不到。
+     为避免同孩近三周内重复，内容为全新撰写（不与 WEEK_1~3 各键句子重复），
+     类别按 科普→情商→歇后语 相邻不连重。 */
+  var SENT_WEEK_0 = {
+    start: '2026-09-04', end: '2026-09-06', week: 0,
+    yueyue: {
+      '2026-09-04': {
+        main: '<b>彩虹是圆的，不是半圆——站在高处或飞机上，能看到完整的彩虹环。</b>',
+        extra: '<p>彩虹是阳光照进小水滴，被折射、反射再折射出来形成的彩色光带。</p><p>水滴是圆的，光转弯的角度也固定，所以彩虹其实是「整圈」，只是在地面上被地平线挡住一半。</p>',
+        topic: 'fun_science'
+      },
+      '2026-09-05': {
+        main: '<b>同学没考好很难过时，先别急着说「没事的」，抱抱他、陪他待一会儿。</b>',
+        extra: '<p>难过的人有时不需要马上被「讲道理」，先被理解、被陪着，心里就好受多了。</p><p>你可以问一句：「你愿意聊聊吗？」如果他想自己待着，就尊重他。</p>',
+        topic: 'eq_heart'
+      },
+      '2026-09-06': {
+        main: '<b>墙上挂帘子——没门儿</b><br>意思：这事办不成，没有商量的余地。',
+        extra: '<p>再来两个常见的：</p><p>擀面杖吹火——一窍不通（完全不懂）</p><p>竹篮打水——一场空（白忙一场，什么也没得到）</p>',
+        topic: 'idiom_riddle'
+      }
+    },
+    chengcheng: {
+      '2026-09-04': {
+        main: '<b>人跑步时为什么会「岔气」肚子疼？多半是呼吸没跟上，横膈膜抽筋了。</b>',
+        extra: '<p>横膈膜是胸和腹之间一片帮助呼吸的肌肉。跑太快又大口喘气，它就容易「抽筋」。</p><p>怎么办：放慢速度，深呼吸，用手轻按疼的地方，慢慢就好了；平时跑前先做热身。</p>',
+        topic: 'fun_science'
+      },
+      '2026-09-05': {
+        main: '<b>别人不小心弄坏了你的东西，先问一句「有没有伤到你」，再谈东西。</b>',
+        extra: '<p>东西可以再买，朋友受伤或难过才是大事。</p><p>等对方说「没事」，再一起想办法：能不能修好？以后小心点。</p>',
+        topic: 'eq_heart'
+      },
+      '2026-09-06': {
+        main: '<b>狗咬吕洞宾——不识好人心</b><br>意思：把人家的好意当成恶意，错怪了好心人。',
+        extra: '<p>再来两个常见的：</p><p>小葱拌豆腐——一清二白（清清楚楚、干干净净）</p><p>芝麻开花——节节高（越来越好）</p>',
+        topic: 'idiom_riddle'
+      }
+    }
+  };
+  SENT_SCHED.unshift(SENT_WEEK_0);
 
   /* 每日英语（固定模块，独立于「今日一句话」）：按周配置，玥玥程程难度不同 */
   var ENGLISH_WEEK_1 = {
@@ -1324,12 +1418,18 @@
     return Math.abs(h);
   }
 
-  /* 无排期条目时的兜底：从历史排期(该孩所有已排素材)取一条当天稳定的，绝不显示"爸妈正在准备" */
+  /* 兜底池哨兵：排除任何"今天周末/玩得开心"占位模板，保证空档(含周末)兜底只给真话 */
+  function isWeekendTmp(m){ return /^<b>今天周末|今天周末，|玩得开心！/.test(m || ''); }
+
+  /* 无排期条目时的兜底：从历史排期(该孩所有已排真话)取一条当天稳定的，绝不显示"爸妈正在准备"或"周末占位" */
   function sentFallback(kid, dateS){
     var pool = [];
     SENT_SCHED.forEach(function(wk){
       var per = wk[kid] || {};
-      Object.keys(per).forEach(function(d){ var it = per[d]; if(it && it.main) pool.push(it); });
+      Object.keys(per).forEach(function(d){
+        var it = per[d];
+        if(it && it.main && !isWeekendTmp(it.main)) pool.push(it);
+      });
     });
     if(!pool.length) return null;
     var idx = hashStr(dateS + '_' + kid) % pool.length;
@@ -2392,7 +2492,9 @@
   function sentenceFilterBar(){
     var chips = '<button type="button" class="rf-chip' + (sentenceFilter === '' ? ' on' : '') + '" data-topic="">全部</button>';
     TOPICS.forEach(function(t){
-      chips += '<button type="button" class="rf-chip' + (sentenceFilter === t.id ? ' on' : '') + '" data-topic="' + t.id + '">' + t.icon + '</button>';
+      if(!topicSeen(t.id)) return;
+      var short = TOPIC_SHORT[t.id] || t.name;
+      chips += '<button type="button" class="rf-chip' + (sentenceFilter === t.id ? ' on' : '') + '" data-topic="' + t.id + '" title="' + t.icon + ' ' + t.name + '">' + t.icon + ' ' + short + '</button>';
     });
     return '<div class="review-filter">' + chips + '</div>';
   }
@@ -2412,8 +2514,9 @@
         });
       });
       if(!hasAny) return;
+      var wLab = (wk.week !== undefined) ? ('第' + wk.week + '周') : ('第' + (wi+1) + '周');
       html += '<div class="review-week">';
-      html += '<div class="review-week-title">第' + (wi+1) + '周（' + wk.start + ' ~ ' + wk.end + '）</div>';
+      html += '<div class="review-week-title">' + wLab + '（' + wk.start + ' ~ ' + wk.end + '）</div>';
       kids.forEach(function(kid){
         var per = wk[kid] || {};
         var dates = Object.keys(per).sort();
